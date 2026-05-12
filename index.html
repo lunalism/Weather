@@ -544,6 +544,25 @@
       justify-content: space-between;
       align-items: center;
     }
+
+    .refreshing-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: "Orbitron", sans-serif;
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: var(--hud-amber);
+      text-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+    }
+    .refreshing-tag .dot {
+      width: 6px;
+      height: 6px;
+      background: var(--hud-amber);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--hud-amber);
+      animation: blink 1.4s ease-in-out infinite;
+    }
     .weather-state .day-tag {
       font-size: 10px;
       letter-spacing: 2px;
@@ -746,12 +765,13 @@
         node.classList.toggle("active", key === id);
       });
 
-      if (fly) {
-        const c = CIRCUITS.find((x) => x.id === id);
-        if (c) map.flyTo([c.lat, c.lng], CIRCUIT_ZOOM, { duration: 1.8 });
+      const c = CIRCUITS.find((x) => x.id === id);
+      if (fly && c) {
+        map.flyTo([c.lat, c.lng], CIRCUIT_ZOOM, { duration: 1.8 });
       }
 
       renderCurrentPanel();
+      ensureCircuitWeather(c);
     }
 
     CIRCUITS.forEach((c) => {
@@ -796,9 +816,9 @@
       cursorEl.textContent = `LAT ${lat}  LNG ${lng}`;
     });
 
-    // ===== Open-Meteo weather fetch =====
+    // ===== Open-Meteo weather fetch (lazy + cached) =====
     const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
-    const WEATHER_REFRESH_MS = 10 * 60 * 1000; // 10 minutes
+    const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 
     const CURRENT_VARS = [
       "temperature_2m",
@@ -849,51 +869,44 @@
       return res.json();
     }
 
-    async function refreshAllWeather() {
-      const t0 = performance.now();
-      const stamp = new Date().toISOString();
-      console.log(`[RaceWeather] fetching ${CIRCUITS.length} circuits @ ${stamp}`);
-
-      const results = await Promise.allSettled(CIRCUITS.map(fetchCircuitWeather));
-      let ok = 0;
-      let fail = 0;
-
-      results.forEach((r, i) => {
-        const c = CIRCUITS[i];
-        if (r.status === "fulfilled") {
-          c.weather = r.value;
-          c.weatherFetchedAt = Date.now();
-          ok++;
-        } else {
-          fail++;
-          console.warn(
-            `[RaceWeather] ${c.id} fetch failed — keeping last data`,
-            r.reason
-          );
-        }
-      });
-
-      const dt = (performance.now() - t0).toFixed(0);
-      console.log(
-        `[RaceWeather] refresh done in ${dt}ms — ok=${ok} fail=${fail}`,
-        Object.fromEntries(
-          CIRCUITS.map((c) => [
-            c.id,
-            c.weather
-              ? {
-                  tempC: c.weather.current?.temperature_2m,
-                  rainMM: c.weather.current?.precipitation,
-                  windKmh: c.weather.current?.wind_speed_10m,
-                  windDir: c.weather.current?.wind_direction_10m,
-                  weatherCode: c.weather.current?.weather_code,
-                  fetchedAt: new Date(c.weatherFetchedAt).toISOString(),
-                }
-              : null,
-          ])
-        )
+    function isCacheFresh(c) {
+      return (
+        c.weather &&
+        c.weatherFetchedAt &&
+        Date.now() - c.weatherFetchedAt < CACHE_TTL_MS
       );
+    }
 
-      renderCurrentPanel();
+    async function ensureCircuitWeather(c) {
+      if (!c) return;
+      if (isCacheFresh(c)) return;
+      if (c.weatherLoading) return; // already in-flight
+
+      c.weatherLoading = true;
+      if (activeCircuitId === c.id) renderCurrentPanel();
+
+      const t0 = performance.now();
+      try {
+        const data = await fetchCircuitWeather(c);
+        c.weather = data;
+        c.weatherFetchedAt = Date.now();
+        const dt = (performance.now() - t0).toFixed(0);
+        console.log(`[RaceWeather] ${c.id} fetched in ${dt}ms`, {
+          tempC: data.current?.temperature_2m,
+          rainMM: data.current?.precipitation,
+          windKmh: data.current?.wind_speed_10m,
+          windDir: data.current?.wind_direction_10m,
+          weatherCode: data.current?.weather_code,
+        });
+      } catch (err) {
+        console.warn(
+          `[RaceWeather] ${c.id} fetch failed — keeping last data`,
+          err
+        );
+      } finally {
+        c.weatherLoading = false;
+        if (activeCircuitId === c.id) renderCurrentPanel();
+      }
     }
 
     // Expose for console inspection: `CIRCUITS[0].weather`
@@ -1025,7 +1038,9 @@
 
         <div class="weather-state">
           <span>${wcText}</span>
-          <span class="day-tag">${isDay ? "DAY" : "NIGHT"}</span>
+          <span class="day-tag">
+            ${c.weatherLoading ? '<span class="refreshing-tag"><span class="dot"></span>REFRESHING</span> ' : ""}${isDay ? "DAY" : "NIGHT"}
+          </span>
         </div>
 
         <div class="temp-block">
@@ -1050,11 +1065,9 @@
       `;
     }
 
-    // Default active circuit (panel has data on first paint) — no map fly
+    // Default circuit on load — triggers a single fetch for Imola only.
+    // Subsequent circuits fetch lazily on tab/marker click, cached for 10min.
     setActiveCircuit("imola", { fly: false });
-
-    refreshAllWeather();
-    setInterval(refreshAllWeather, WEATHER_REFRESH_MS);
   </script>
 </body>
 </html>
