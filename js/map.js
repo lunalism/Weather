@@ -49,7 +49,26 @@ CIRCUITS.forEach((c) => {
 const mapLabelLayer    = L.layerGroup().addTo(map);
 const surroundingLayer = L.layerGroup().addTo(map);
 const precipLayer      = L.layerGroup();
+const trackLayer       = L.layerGroup().addTo(map);
 let precipLayerActive  = false;
+
+// ===== Active circuit track outline (static OSM data from tracks.js) =====
+function updateTrackLayer(circuitId) {
+  trackLayer.clearLayers();
+  if (!circuitId) return;
+  const ways = (typeof TRACKS !== "undefined") ? TRACKS[circuitId] : null;
+  if (!ways || !ways.length) return;
+  ways.forEach((way) => {
+    L.polyline(way, {
+      color: "#FFD700",
+      weight: 3,
+      opacity: 0.85,
+      lineCap: "round",
+      lineJoin: "round",
+      interactive: false,
+    }).addTo(trackLayer);
+  });
+}
 
 // ===== Label icon (temp + wind arrow, optionally wind speed for small) =====
 function makeMapLabelIcon({ dir, temp, wind, small = false }) {

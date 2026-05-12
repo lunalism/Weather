@@ -23,6 +23,9 @@ function setActiveCircuit(id, { fly = true } = {}) {
   // Surrounding points are tied to the active circuit
   surroundingLayer.clearLayers();
   if (c) loadSurroundingForCircuit(c);
+
+  // Highlight the circuit's track outline (static OSM polylines)
+  updateTrackLayer(id);
 }
 
 // Clock kicks off here
