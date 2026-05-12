@@ -930,7 +930,7 @@
     let precipLayerActive = false;
 
     // ===== Surrounding-point labels (4 N/S/E/W points around active circuit) =====
-    const SURROUNDING_OFFSET = 0.04;   // ~4.4 km — must stay inside viewport at zoom 14
+    const SURROUNDING_OFFSET = 0.05;   // ~5.5 km — close enough to stay in zoom-14 viewport
     const SURROUNDING_MIN_ZOOM = 13;   // hide when zoomed out beyond this (track-visible only)
     const surroundingData = new Map(); // id → { lat, lng, current, fetchedAt }
     let surroundingLoadToken = 0;
