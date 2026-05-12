@@ -658,6 +658,178 @@
     .data-row .value.dim {
       color: rgba(0, 255, 136, 0.45);
     }
+
+    /* ===== Right panel: forecast + wind ===== */
+    .panel-right {
+      top: 110px;
+      bottom: 80px;
+      right: 60px;
+      width: 340px;
+      padding: 22px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      overflow: hidden;
+    }
+    .panel-right .panel-body {
+      gap: 8px;
+    }
+
+    .section-header {
+      font-family: "Orbitron", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--hud-cyan);
+      text-shadow: 0 0 6px rgba(0, 221, 255, 0.45);
+      padding: 4px 2px;
+      border-bottom: 1px solid var(--hud-green-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .section-header .meta {
+      font-family: "Share Tech Mono", monospace;
+      font-size: 9px;
+      letter-spacing: 1.2px;
+      color: rgba(0, 255, 136, 0.45);
+      text-shadow: none;
+    }
+
+    /* Precipitation chart */
+    .chart-precip {
+      display: flex;
+      gap: 3px;
+      align-items: stretch;
+      padding: 10px 0 6px;
+    }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-family: "Share Tech Mono", monospace;
+      font-size: 9px;
+      letter-spacing: 0.3px;
+    }
+    .bar-pct {
+      color: rgba(0, 255, 136, 0.7);
+      height: 11px;
+      line-height: 11px;
+    }
+    .bar-pct.amber { color: var(--hud-amber); }
+    .bar-pct.red   { color: var(--hud-red); }
+    .bar-track {
+      width: 100%;
+      height: 96px;
+      position: relative;
+      border-bottom: 1px solid var(--hud-green-dim);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0, 255, 136, 0.04) 0,
+          rgba(0, 255, 136, 0.04) 1px,
+          transparent 1px,
+          transparent 24px
+        );
+    }
+    .bar {
+      width: 76%;
+      background: var(--hud-green);
+      box-shadow: 0 0 6px var(--hud-green);
+      min-height: 2px;
+      transition: height 0.4s ease, background-color 0.3s ease;
+    }
+    .bar.amber {
+      background: var(--hud-amber);
+      box-shadow: 0 0 6px var(--hud-amber);
+    }
+    .bar.red {
+      background: var(--hud-red);
+      box-shadow: 0 0 6px var(--hud-red);
+    }
+    .bar-time {
+      color: rgba(0, 255, 136, 0.5);
+    }
+
+    /* Wind compass */
+    .compass-wrap {
+      position: relative;
+      padding: 12px 0 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .compass {
+      width: 200px;
+      height: 200px;
+      filter: drop-shadow(0 0 6px var(--hud-green-glow));
+    }
+    .compass .ring-outer {
+      fill: rgba(0, 255, 136, 0.03);
+      stroke: var(--hud-green);
+      stroke-width: 1.5;
+      opacity: 0.85;
+    }
+    .compass .ring-inner {
+      fill: none;
+      stroke: var(--hud-green-dim);
+      stroke-width: 1;
+      stroke-dasharray: 3 3;
+    }
+    .compass .tick {
+      stroke: var(--hud-green-dim);
+      stroke-width: 1;
+    }
+    .compass .tick-major {
+      stroke: var(--hud-green);
+      stroke-width: 1.5;
+    }
+    .compass .cardinal {
+      fill: var(--hud-green);
+      font-family: "Orbitron", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .compass .cardinal.n {
+      fill: var(--hud-amber);
+    }
+    .compass .needle {
+      transition: transform 0.7s cubic-bezier(0.4, 1.4, 0.6, 1);
+      transform-origin: 100px 100px;
+    }
+    .compass .needle-arrow {
+      fill: var(--hud-green);
+      filter: drop-shadow(0 0 4px var(--hud-green));
+    }
+    .compass .needle-tail {
+      fill: rgba(0, 255, 136, 0.2);
+      stroke: rgba(0, 255, 136, 0.45);
+      stroke-width: 0.5;
+    }
+    .compass .hub {
+      fill: var(--hud-cyan);
+      filter: drop-shadow(0 0 5px var(--hud-cyan));
+    }
+    .compass-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, calc(-50% + 36px));
+      pointer-events: none;
+      text-align: center;
+      font-family: "Orbitron", sans-serif;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--hud-cyan);
+      text-shadow: 0 0 6px rgba(0, 221, 255, 0.5);
+    }
   </style>
 </head>
 <body>
@@ -672,6 +844,19 @@
     <span class="panel-corner bl"></span>
     <span class="panel-corner br"></span>
     <div class="panel-body" id="panel-current">
+      <div class="panel-placeholder">
+        <div><span class="dot"></span>STANDBY</div>
+      </div>
+    </div>
+  </aside>
+
+  <aside class="panel panel-right" id="panel-right">
+    <span class="panel-label">FORECAST + WIND</span>
+    <span class="panel-corner tl"></span>
+    <span class="panel-corner tr"></span>
+    <span class="panel-corner bl"></span>
+    <span class="panel-corner br"></span>
+    <div class="panel-body" id="panel-forecast">
       <div class="panel-placeholder">
         <div><span class="dot"></span>STANDBY</div>
       </div>
@@ -770,7 +955,7 @@
         map.flyTo([c.lat, c.lng], CIRCUIT_ZOOM, { duration: 1.8 });
       }
 
-      renderCurrentPanel();
+      renderPanels();
       ensureCircuitWeather(c);
     }
 
@@ -857,7 +1042,7 @@
         current: CURRENT_VARS.join(","),
         hourly: HOURLY_VARS.join(","),
         daily: DAILY_VARS.join(","),
-        forecast_days: "1",
+        forecast_days: "2",
         timezone: "auto",
       });
       return `${WEATHER_API}?${params}`;
@@ -883,7 +1068,7 @@
       if (c.weatherLoading) return; // already in-flight
 
       c.weatherLoading = true;
-      if (activeCircuitId === c.id) renderCurrentPanel();
+      if (activeCircuitId === c.id) renderPanels();
 
       const t0 = performance.now();
       try {
@@ -905,7 +1090,7 @@
         );
       } finally {
         c.weatherLoading = false;
-        if (activeCircuitId === c.id) renderCurrentPanel();
+        if (activeCircuitId === c.id) renderPanels();
       }
     }
 
@@ -972,12 +1157,98 @@
 
     function currentHourIndex(weather) {
       const t = weather?.current?.time;
-      if (!t || !weather?.hourly?.time) return -1;
-      return weather.hourly.time.indexOf(t);
+      const arr = weather?.hourly?.time;
+      if (!t || !arr) return -1;
+      // current.time is at minute resolution ("...T15:42"), hourly is hourly
+      // ("...T15:00") — align to the hour, then fall back to the latest
+      // hourly entry not after current.
+      const hourKey = t.slice(0, 13) + ":00";
+      const hit = arr.indexOf(hourKey);
+      if (hit >= 0) return hit;
+      for (let i = arr.length - 1; i >= 0; i--) {
+        if (arr[i] <= t) return i;
+      }
+      return 0;
     }
 
     function row(label, value, cls = "") {
       return `<div class="data-row"><span class="label">${label}</span><span class="value ${cls}">${value}</span></div>`;
+    }
+
+    // ===== Wind helpers =====
+    const DIR_NAMES = [
+      "N","NNE","NE","ENE","E","ESE","SE","SSE",
+      "S","SSW","SW","WSW","W","WNW","NW","NNW",
+    ];
+    function dirName(deg) {
+      if (deg == null || Number.isNaN(deg)) return "—";
+      const n = ((deg % 360) + 360) % 360;
+      return DIR_NAMES[Math.round(n / 22.5) % 16];
+    }
+
+    function beaufort(kmh) {
+      if (kmh == null || Number.isNaN(kmh)) return { n: null, name: "—" };
+      const v = kmh;
+      if (v < 1)   return { n: 0,  name: "CALM" };
+      if (v < 6)   return { n: 1,  name: "LIGHT AIR" };
+      if (v < 12)  return { n: 2,  name: "LIGHT BREEZE" };
+      if (v < 20)  return { n: 3,  name: "GENTLE BREEZE" };
+      if (v < 29)  return { n: 4,  name: "MODERATE BREEZE" };
+      if (v < 39)  return { n: 5,  name: "FRESH BREEZE" };
+      if (v < 50)  return { n: 6,  name: "STRONG BREEZE" };
+      if (v < 62)  return { n: 7,  name: "NEAR GALE" };
+      if (v < 75)  return { n: 8,  name: "GALE" };
+      if (v < 89)  return { n: 9,  name: "STRONG GALE" };
+      if (v < 103) return { n: 10, name: "STORM" };
+      if (v < 118) return { n: 11, name: "VIOLENT STORM" };
+      return { n: 12, name: "HURRICANE" };
+    }
+
+    function build12hPrecip(weather) {
+      const arr = weather?.hourly?.time;
+      const probs = weather?.hourly?.precipitation_probability;
+      const start = currentHourIndex(weather);
+      if (!arr || !probs || start < 0) return [];
+      const out = [];
+      for (let i = 0; i < 12 && start + i < arr.length; i++) {
+        const t = arr[start + i];
+        out.push({ hour: t.slice(11, 13), pct: probs[start + i] ?? 0 });
+      }
+      return out;
+    }
+
+    function buildCompassSVG(dirDeg) {
+      const cx = 100, cy = 100, R = 92;
+      const ticks = [];
+      for (let a = 0; a < 360; a += 15) {
+        const major = a % 90 === 0;
+        const len = major ? 10 : 5;
+        const rad = ((a - 90) * Math.PI) / 180;
+        const x1 = cx + R * Math.cos(rad);
+        const y1 = cy + R * Math.sin(rad);
+        const x2 = cx + (R - len) * Math.cos(rad);
+        const y2 = cy + (R - len) * Math.sin(rad);
+        ticks.push(
+          `<line class="tick${major ? " tick-major" : ""}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`
+        );
+      }
+      const rot = dirDeg ?? 0;
+      return `
+        <svg class="compass" viewBox="0 0 200 200" aria-hidden="true">
+          <circle class="ring-outer" cx="100" cy="100" r="92"/>
+          <circle class="ring-inner" cx="100" cy="100" r="74"/>
+          ${ticks.join("")}
+          <text class="cardinal n" x="100" y="14">N</text>
+          <text class="cardinal"   x="186" y="100">E</text>
+          <text class="cardinal"   x="100" y="186">S</text>
+          <text class="cardinal"   x="14"  y="100">W</text>
+          <g class="needle" style="transform: rotate(${rot}deg)">
+            <polygon class="needle-arrow" points="100,26 92,100 108,100"/>
+            <polygon class="needle-tail"  points="92,100 108,100 100,158"/>
+          </g>
+          <circle class="hub" cx="100" cy="100" r="5"/>
+        </svg>
+      `;
     }
 
     function renderCurrentPanel() {
@@ -1063,6 +1334,86 @@
           ${row("SUNSET",         formatHM(dy.sunset?.[0]),      "cyan")}
         </div>
       `;
+    }
+
+    function renderForecastPanel() {
+      const el = document.getElementById("panel-forecast");
+      const c = CIRCUITS.find((x) => x.id === activeCircuitId);
+
+      if (!c) {
+        el.innerHTML = `<div class="panel-placeholder"><div><span class="dot"></span>SELECT CIRCUIT</div></div>`;
+        return;
+      }
+      if (!c.weather) {
+        el.innerHTML = `<div class="panel-placeholder"><div><span class="dot"></span>ACQUIRING DATA…</div></div>`;
+        return;
+      }
+
+      const w = c.weather;
+      const cur = w.current ?? {};
+
+      // ---- 12h precipitation chart
+      const series = build12hPrecip(w);
+      const chartHTML = series.length
+        ? series
+            .map(({ hour, pct }) => {
+              const v = Number.isFinite(pct) ? pct : 0;
+              const cls = v >= 60 ? "red" : v >= 30 ? "amber" : "";
+              const h = Math.max(2, Math.min(100, v));
+              return `
+                <div class="bar-col">
+                  <div class="bar-pct ${cls}">${v}</div>
+                  <div class="bar-track"><div class="bar ${cls}" style="height: ${h}%"></div></div>
+                  <div class="bar-time">${hour}</div>
+                </div>`;
+            })
+            .join("")
+        : `<div class="bar-col"><div class="bar-pct">—</div><div class="bar-track"></div><div class="bar-time">—</div></div>`;
+
+      // ---- Wind block
+      const ws    = cur.wind_speed_10m;
+      const gust  = cur.wind_gusts_10m;
+      const dDeg  = cur.wind_direction_10m;
+      const dTxt  = dirName(dDeg);
+      const bft   = beaufort(ws);
+
+      const speedCls = classifyValue(ws,   { red: 50, amber: 30 });
+      const gustCls  = classifyValue(gust, { red: 60, amber: 40 });
+
+      const fmt = (v, digits = 0, suffix = "") =>
+        v == null || Number.isNaN(v) ? "—" : `${v.toFixed(digits)}${suffix}`;
+
+      const headerMeta =
+        dDeg == null ? "—" : `${dTxt} ${Math.round(dDeg)}°`;
+
+      el.innerHTML = `
+        <div class="section-header">
+          <span>12H PRECIPITATION</span>
+          <span class="meta">PROB %</span>
+        </div>
+        <div class="chart-precip">${chartHTML}</div>
+
+        <div class="section-header">
+          <span>WIND VECTOR</span>
+          <span class="meta">${headerMeta}</span>
+        </div>
+        <div class="compass-wrap">
+          ${buildCompassSVG(dDeg)}
+          <div class="compass-center">DIR ${dDeg == null ? "—" : Math.round(dDeg) + "°"}</div>
+        </div>
+
+        <div class="data-rows">
+          ${row("WIND SPEED", fmt(ws,   1, " km/h"), speedCls)}
+          ${row("GUSTS",      fmt(gust, 1, " km/h"), gustCls)}
+          ${row("DIRECTION",  headerMeta)}
+          ${row("BEAUFORT",   bft.n == null ? "—" : `${bft.n} ${bft.name}`)}
+        </div>
+      `;
+    }
+
+    function renderPanels() {
+      renderCurrentPanel();
+      renderForecastPanel();
     }
 
     // Default circuit on load — triggers a single fetch for Imola only.
