@@ -26,26 +26,45 @@
 
   <style>
     :root {
-      --bg-deep: #0a0a0f;
-      --bg-surface: #14141c;
-      --bg-card: rgba(22, 24, 32, 0.72);
-      --bg-card-strong: rgba(28, 30, 40, 0.88);
-      --bg-elev: rgba(255, 255, 255, 0.04);
-      --bg-elev-hover: rgba(255, 255, 255, 0.07);
-      --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-strong: rgba(255, 255, 255, 0.16);
-      --text-primary: rgba(255, 255, 255, 0.96);
-      --text-secondary: rgba(255, 255, 255, 0.62);
-      --text-muted: rgba(255, 255, 255, 0.4);
-      --text-faint: rgba(255, 255, 255, 0.22);
+      /* Backgrounds */
+      --bg-deep: #f5f5f7;
+      --bg-surface: #ffffff;
+      --bg-card: rgba(255, 255, 255, 0.86);
+      --bg-card-strong: rgba(255, 255, 255, 0.95);
+      --bg-elev: rgba(0, 0, 0, 0.035);
+      --bg-elev-hover: rgba(0, 0, 0, 0.06);
+
+      /* Borders */
+      --border-subtle: rgba(0, 0, 0, 0.07);
+      --border-strong: rgba(0, 0, 0, 0.13);
+
+      /* Text */
+      --text-primary: #1a1a2e;
+      --text-secondary: #555a66;
+      --text-muted: #84899a;
+      --text-faint: #b8bcc7;
+
+      /* Accents */
       --accent-blue: #3b82f6;
-      --accent-blue-soft: rgba(59, 130, 246, 0.16);
+      --accent-blue-soft: rgba(59, 130, 246, 0.10);
       --accent-blue-border: rgba(59, 130, 246, 0.4);
-      --color-red: #ef4444;
-      --color-amber: #f59e0b;
-      --color-green: #10b981;
-      --shadow-md: 0 10px 32px rgba(0, 0, 0, 0.5);
-      --shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.35);
+
+      /* Status colors (slightly darker for contrast on light) */
+      --color-red: #dc2626;
+      --color-amber: #d97706;
+      --color-green: #059669;
+
+      /* Dark overlay (map-floating pills/buttons/labels) */
+      --overlay-dark: rgba(20, 22, 30, 0.82);
+      --overlay-dark-strong: rgba(28, 30, 40, 0.92);
+      --overlay-dark-border: rgba(255, 255, 255, 0.16);
+
+      /* Shadows (lighter, more diffuse on light bg) */
+      --shadow-md: 0 10px 32px rgba(15, 20, 35, 0.08);
+      --shadow-sm: 0 2px 10px rgba(15, 20, 35, 0.06);
+      --shadow-overlay: 0 4px 14px rgba(0, 0, 0, 0.28);
+
+      /* Radii */
       --radius-card: 18px;
       --radius-pill: 10px;
       --radius-btn: 12px;
@@ -79,19 +98,17 @@
     #map {
       position: absolute;
       inset: 0;
-      background: #050508;
+      background: var(--bg-deep);
       z-index: 1;
     }
     .leaflet-container {
-      background: #050508;
+      background: var(--bg-deep);
       font-family: "Inter", sans-serif;
     }
     .leaflet-control-attribution { display: none !important; }
-    .leaflet-tile {
-      filter: saturate(0.85) brightness(0.92);
-    }
+    /* No tile filter — show satellite imagery at native brightness/saturation */
 
-    /* Circuit markers */
+    /* Circuit markers — blue dot with white halo (visible on light + satellite) */
     .circuit-marker {
       position: relative;
       width: 16px;
@@ -103,57 +120,86 @@
       margin: auto;
       width: 12px;
       height: 12px;
-      background: white;
-      border: 2px solid var(--accent-blue);
+      background: var(--accent-blue);
+      border: 2px solid white;
       border-radius: 50%;
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.22);
+      box-shadow:
+        0 0 0 4px rgba(59, 130, 246, 0.25),
+        0 2px 6px rgba(0, 0, 0, 0.28);
       transition: all 0.3s ease;
     }
     .circuit-marker .ring {
       position: absolute;
       inset: 0;
       border-radius: 50%;
-      border: 1.5px solid rgba(59, 130, 246, 0.55);
+      border: 1.5px solid rgba(59, 130, 246, 0.7);
       opacity: 0;
       animation: pulse-ring 2.8s ease-out infinite;
       pointer-events: none;
     }
     @keyframes pulse-ring {
-      0%   { transform: scale(0.6); opacity: 0.75; }
+      0%   { transform: scale(0.6); opacity: 0.85; }
       80%, 100% { transform: scale(3); opacity: 0; }
     }
 
-    /* Wind arrow markers */
-    .wind-arrow {
-      width: 18px;
-      height: 18px;
+    /* Map label: dark pill with wind arrow + temperature, sits above each marker.
+       Wrapped in a flex anchor so the natural-width pill stays centered horizontally
+       regardless of temperature digit width (e.g. "8°" vs "100°"). */
+    .map-label-anchor {
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.6s ease;
       pointer-events: none;
     }
-    .wind-arrow svg {
+    .map-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      background: var(--overlay-dark);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--overlay-dark-border);
+      border-radius: 13px;
+      color: white;
+      font-family: "Orbitron", sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      box-shadow: var(--shadow-overlay);
+      white-space: nowrap;
+    }
+    .map-label .arrow {
+      width: 11px;
+      height: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.6s ease;
+    }
+    .map-label .arrow svg {
       width: 100%;
       height: 100%;
-      fill: rgba(255, 255, 255, 0.85);
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.65));
+      fill: white;
+    }
+    .map-label .temp {
+      letter-spacing: -0.2px;
     }
 
-    /* Tooltip */
+    /* Tooltip (dark pill — sits on satellite tiles) */
     .leaflet-tooltip.circuit-tooltip {
-      background: var(--bg-card-strong);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      color: var(--text-primary);
-      border: 1px solid var(--border-strong);
+      background: var(--overlay-dark);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: white;
+      border: 1px solid var(--overlay-dark-border);
       border-radius: 10px;
       padding: 6px 12px;
       font-family: "Inter", sans-serif;
       font-weight: 500;
       font-size: 12px;
       letter-spacing: 0.2px;
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-overlay);
     }
     .leaflet-tooltip.circuit-tooltip::before { display: none; }
 
@@ -218,7 +264,7 @@
     }
     .tab:hover:not(.active) {
       color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(0, 0, 0, 0.05);
     }
     .tab.active {
       background: var(--accent-blue);
@@ -374,7 +420,7 @@
       align-items: center;
       gap: 6px;
       padding: 4px 10px;
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(0, 0, 0, 0.05);
       border: 1px solid var(--border-subtle);
       border-radius: 7px;
       font-size: 11px;
@@ -612,7 +658,7 @@
       height: 100%;
     }
     .compass .ring-outer {
-      fill: rgba(255, 255, 255, 0.02);
+      fill: rgba(0, 0, 0, 0.018);
       stroke: var(--border-strong);
       stroke-width: 1;
     }
@@ -644,7 +690,7 @@
       transform-origin: 100px 100px;
     }
     .compass .needle-arrow { fill: var(--accent-blue); }
-    .compass .needle-tail  { fill: rgba(255, 255, 255, 0.14); }
+    .compass .needle-tail  { fill: rgba(0, 0, 0, 0.12); }
     .compass .hub          { fill: var(--text-primary); }
     .compass-center {
       position: absolute;
@@ -735,7 +781,7 @@
       animation: pulse-soft 0.6s ease-in-out infinite;
     }
     .track-state.standby {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(0, 0, 0, 0.04);
       border: 1px solid var(--border-subtle);
       color: var(--text-muted);
     }
@@ -805,28 +851,28 @@
     .map-btn {
       width: 42px;
       height: 42px;
-      background: var(--bg-card);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border-subtle);
+      background: var(--overlay-dark);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--overlay-dark-border);
       border-radius: var(--radius-btn);
-      color: var(--text-primary);
+      color: white;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-overlay);
     }
     .map-btn:hover {
-      background: var(--bg-card-strong);
-      border-color: var(--border-strong);
+      background: var(--overlay-dark-strong);
+      border-color: rgba(255, 255, 255, 0.22);
     }
     .map-btn:active { transform: scale(0.96); }
     .map-btn.active {
       background: var(--accent-blue);
       border-color: var(--accent-blue);
       color: white;
-      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.45);
     }
     .map-btn svg {
       width: 18px;
@@ -844,16 +890,16 @@
       align-items: center;
       gap: 8px;
       padding: 8px 18px;
-      background: var(--bg-card-strong);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: var(--overlay-dark-strong);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--accent-blue-border);
       border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.28);
+      box-shadow: 0 6px 22px rgba(59, 130, 246, 0.3);
       font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.3px;
-      color: var(--accent-blue);
+      color: white;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.3s ease, transform 0.3s ease;
@@ -967,32 +1013,34 @@
       iconAnchor: [8, 8],
     });
 
-    const windArrowLayer = L.layerGroup().addTo(map);
+    const mapLabelLayer = L.layerGroup().addTo(map);
     const precipLayer = L.layerGroup();
     let precipLayerActive = false;
 
-    function makeWindArrowIcon(deg) {
+    function makeMapLabelIcon(c) {
       // Open-Meteo wind_direction = direction wind is coming FROM.
       // Arrow points in the direction wind is BLOWING TO → rotate by deg + 180.
-      const rot = (deg ?? 0) + 180;
+      const dir = c.weather?.current?.wind_direction_10m;
+      const temp = c.weather?.current?.temperature_2m;
+      const rot = (dir ?? 0) + 180;
+      const tempText = temp == null ? "—" : `${Math.round(temp)}°`;
       return L.divIcon({
         className: "",
-        html: `<div class="wind-arrow" style="transform: rotate(${rot}deg)">${ICONS.arrow}</div>`,
-        iconSize: [18, 18],
-        iconAnchor: [9, 38],
+        html: `<div class="map-label-anchor"><div class="map-label"><span class="arrow" style="transform: rotate(${rot}deg)">${ICONS.arrow}</span><span class="temp">${tempText}</span></div></div>`,
+        iconSize: [80, 24],
+        iconAnchor: [40, 40],
       });
     }
 
-    function updateWindArrows() {
-      windArrowLayer.clearLayers();
+    function updateMapLabels() {
+      mapLabelLayer.clearLayers();
       CIRCUITS.forEach((c) => {
-        const dir = c.weather?.current?.wind_direction_10m;
-        if (dir == null) return;
+        if (!c.weather) return;
         L.marker([c.lat, c.lng], {
-          icon: makeWindArrowIcon(dir),
+          icon: makeMapLabelIcon(c),
           interactive: false,
           keyboard: false,
-        }).addTo(windArrowLayer);
+        }).addTo(mapLabelLayer);
       });
     }
 
@@ -1160,7 +1208,7 @@
         c.weatherLoading = false;
         if (activeCircuitId === c.id) renderPanels();
         if (updated && activeCircuitId === c.id) showUpdateToast();
-        updateWindArrows();
+        updateMapLabels();
         updatePrecipLayer();
       }
     }
