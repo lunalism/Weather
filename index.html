@@ -931,7 +931,7 @@
 
     // ===== Surrounding-point labels (4 N/S/E/W points around active circuit) =====
     const SURROUNDING_OFFSET = 0.025;  // ~2.7 km — tight enough to avoid panel corners
-    const SURROUNDING_MIN_ZOOM = 13;   // hide when zoomed out beyond this (track-visible only)
+    const SURROUNDING_MIN_ZOOM = 15;   // hide when zoomed out beyond this (close-up only)
     const surroundingData = new Map(); // id → { lat, lng, current, fetchedAt }
     let surroundingLoadToken = 0;
 
