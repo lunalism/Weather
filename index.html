@@ -126,34 +126,58 @@
     }
 
     /* Map label: dark pill with arrow + temp */
+    /* Flex wrapper that fills the Leaflet icon box so the inline-flex pill
+       inside centers correctly both axes. Missing width/height: 100% was
+       causing labels to render at the top-left of the icon box. */
     .map-label-anchor {
-      display: flex; align-items: center; justify-content: center;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       pointer-events: none;
     }
     .map-label {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 3px 9px;
+      gap: 8px;
+      padding: 6px 14px;
       background: var(--overlay-dark);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid var(--overlay-dark-border);
-      border-radius: 13px;
+      border-radius: 16px;
       color: white;
       font-family: "Inter", sans-serif;
-      font-size: 11px;
-      font-weight: 500;
+      font-size: 18px;
+      font-weight: 600;
       font-variant-numeric: tabular-nums;
       box-shadow: var(--shadow-overlay);
       white-space: nowrap;
+      letter-spacing: -0.2px;
     }
     .map-label .arrow {
-      width: 11px; height: 11px;
+      width: 14px; height: 14px;
       display: inline-flex; align-items: center; justify-content: center;
       transition: transform 0.6s ease;
     }
     .map-label .arrow svg { width: 100%; height: 100%; fill: white; }
+
+    /* Smaller, dimmer variant for surrounding-point labels.
+       Roughly 0.8× of main (18px → 14px). */
+    .map-label.map-label-sm {
+      padding: 4px 10px;
+      font-size: 14px;
+      font-weight: 500;
+      gap: 6px;
+      border-radius: 13px;
+      background: rgba(18, 22, 32, 0.7);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.32);
+      color: rgba(255, 255, 255, 0.95);
+    }
+    .map-label.map-label-sm .arrow { width: 11px; height: 11px; }
+    .map-label.map-label-sm .wind { opacity: 0.85; }
 
     /* Leaflet tooltip — dark pill */
     .leaflet-tooltip.circuit-tooltip {
@@ -901,28 +925,137 @@
     });
 
     const mapLabelLayer = L.layerGroup().addTo(map);
+    const surroundingLayer = L.layerGroup().addTo(map);
     const precipLayer = L.layerGroup();
     let precipLayerActive = false;
 
-    function makeMapLabelIcon(c) {
-      const dir = c.weather?.current?.wind_direction_10m;
-      const temp = c.weather?.current?.temperature_2m;
+    // ===== Surrounding-point labels (4 N/S/E/W points around active circuit) =====
+    const SURROUNDING_OFFSET = 0.15;   // ~15 km in degrees
+    const SURROUNDING_MIN_ZOOM = 10;   // hide when zoomed out beyond this
+    const surroundingData = new Map(); // id → { lat, lng, current, fetchedAt }
+    let surroundingLoadToken = 0;
+
+    function getSurroundingPoints(c) {
+      return [
+        { id: `${c.id}-n`, lat: c.lat + SURROUNDING_OFFSET, lng: c.lng                       },
+        { id: `${c.id}-s`, lat: c.lat - SURROUNDING_OFFSET, lng: c.lng                       },
+        { id: `${c.id}-e`, lat: c.lat,                      lng: c.lng + SURROUNDING_OFFSET },
+        { id: `${c.id}-w`, lat: c.lat,                      lng: c.lng - SURROUNDING_OFFSET },
+      ];
+    }
+
+    async function loadSurroundingForCircuit(c) {
+      const myToken = ++surroundingLoadToken;
+      const points = getSurroundingPoints(c);
+      console.log(`[RaceWeather] surrounding: loading 4 points around ${c.id}`);
+      for (const p of points) {
+        if (myToken !== surroundingLoadToken) return; // cancelled by new active circuit
+        const cached = surroundingData.get(p.id);
+        if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+          console.log(`[RaceWeather] surrounding ${p.id} from cache`);
+          updateSurroundingLabels();
+          continue;
+        }
+        try {
+          const cur = await fetchMiniWeather(p.lat, p.lng);
+          if (myToken !== surroundingLoadToken) return;
+          surroundingData.set(p.id, {
+            lat: p.lat, lng: p.lng, current: cur, fetchedAt: Date.now(),
+          });
+          console.log(`[RaceWeather] surrounding ${p.id} fetched`, {
+            tempC: cur?.temperature_2m,
+            windKmh: cur?.wind_speed_10m,
+            windDir: cur?.wind_direction_10m,
+          });
+          updateSurroundingLabels();
+        } catch (err) {
+          console.warn(`[RaceWeather] surrounding fetch failed for ${p.id}`, err);
+        }
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    }
+
+    function updateSurroundingLabels() {
+      surroundingLayer.clearLayers();
+      const zoom = map.getZoom();
+      const c = CIRCUITS.find((x) => x.id === activeCircuitId);
+      // Zoom check intentionally disabled for now — surfaces labels regardless
+      // so we can verify the render path. Re-add `if (zoom < 10) return;` once
+      // visibility is confirmed.
+      if (!c) {
+        console.log(`[RaceWeather] updateSurroundingLabels: no active circuit`);
+        return;
+      }
+      const points = getSurroundingPoints(c);
+      let rendered = 0;
+      let pending = 0;
+      points.forEach((p) => {
+        const data = surroundingData.get(p.id);
+        if (!data?.current) {
+          pending++;
+          return;
+        }
+        L.marker([p.lat, p.lng], {
+          icon: makeMapLabelIcon({
+            dir:  data.current.wind_direction_10m,
+            temp: data.current.temperature_2m,
+            wind: data.current.wind_speed_10m,
+            small: true,
+          }),
+          interactive: false,
+          keyboard: false,
+        }).addTo(surroundingLayer);
+        rendered++;
+      });
+      console.log(
+        `[RaceWeather] updateSurroundingLabels: active=${activeCircuitId}, zoom=${zoom.toFixed(1)}, rendered=${rendered}/${points.length}, pending=${pending}`
+      );
+    }
+
+    map.on("zoomend", updateSurroundingLabels);
+
+    function makeMapLabelIcon({ dir, temp, wind, small = false }) {
+      // Open-Meteo wind_direction = direction wind is coming FROM.
+      // Arrow points where wind is BLOWING TO → rotate by deg + 180.
       const rot = (dir ?? 0) + 180;
       const tempText = temp == null ? "—" : `${Math.round(temp)}°`;
+
+      let inner;
+      if (small) {
+        // Surrounding point: "15° ↗ 9km/h" — temp + arrow + wind speed.
+        const windText = wind == null ? "—" : `${Math.round(wind)}km/h`;
+        inner = `<span class="temp">${tempText}</span><span class="arrow" style="transform: rotate(${rot}deg)">${ICONS.arrow}</span><span class="wind">${windText}</span>`;
+      } else {
+        // Main circuit marker: "↗ 18°" — arrow + temp.
+        inner = `<span class="arrow" style="transform: rotate(${rot}deg)">${ICONS.arrow}</span><span class="temp">${tempText}</span>`;
+      }
+
+      const cls = small ? "map-label map-label-sm" : "map-label";
+      // Sized for the new larger fonts (main 18px, small 14px) plus content.
+      const size = small ? [140, 28] : [110, 38];
+      // Small label has no underlying marker → center on point.
+      // Main label sits ABOVE its pulse marker (~8px gap).
+      const anchor = small ? [70, 14] : [55, 56];
+
       return L.divIcon({
         className: "",
-        html: `<div class="map-label-anchor"><div class="map-label"><span class="arrow" style="transform: rotate(${rot}deg)">${ICONS.arrow}</span><span class="temp">${tempText}</span></div></div>`,
-        iconSize: [80, 24],
-        iconAnchor: [40, 40],
+        html: `<div class="map-label-anchor"><div class="${cls}">${inner}</div></div>`,
+        iconSize: size,
+        iconAnchor: anchor,
       });
     }
 
     function updateMapLabels() {
       mapLabelLayer.clearLayers();
       CIRCUITS.forEach((c) => {
-        if (!c.weather) return;
+        // Prefer full weather (c.weather) if available, fall back to mini (c.mini)
+        const src = c.weather?.current ?? c.mini;
+        if (!src) return;
         L.marker([c.lat, c.lng], {
-          icon: makeMapLabelIcon(c),
+          icon: makeMapLabelIcon({
+            dir: src.wind_direction_10m,
+            temp: src.temperature_2m,
+          }),
           interactive: false,
           keyboard: false,
         }).addTo(mapLabelLayer);
@@ -985,6 +1118,10 @@
 
       renderPanels();
       ensureCircuitWeather(c);
+
+      // Surrounding points are tied to the active circuit
+      surroundingLayer.clearLayers();
+      if (c) loadSurroundingForCircuit(c);
     }
 
     CIRCUITS.forEach((c) => {
@@ -1056,6 +1193,46 @@
       return res.json();
     }
 
+    // ===== Mini fetch (label-only data for any lat/lng) =====
+    const MINI_VARS = [
+      "temperature_2m",
+      "wind_speed_10m",
+      "wind_direction_10m",
+      "weather_code",
+    ];
+
+    function buildMiniURL(lat, lng) {
+      const params = new URLSearchParams({
+        latitude: lat,
+        longitude: lng,
+        current: MINI_VARS.join(","),
+        timezone: "auto",
+      });
+      return `${WEATHER_API}?${params}`;
+    }
+
+    async function fetchMiniWeather(lat, lng) {
+      const res = await fetch(buildMiniURL(lat, lng));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      return data.current ?? null;
+    }
+
+    // Bootstrap: walk all 8 circuits sequentially (300ms spacing) so labels
+    // appear progressively on the world view without tripping rate limits.
+    async function loadAllCircuitsMini() {
+      for (const c of CIRCUITS) {
+        if (c.weather || c.mini) continue;
+        try {
+          c.mini = await fetchMiniWeather(c.lat, c.lng);
+          updateMapLabels();
+        } catch (err) {
+          console.warn(`[RaceWeather] mini fetch failed for ${c.id}`, err);
+        }
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    }
+
     function isCacheFresh(c) {
       return (
         c.weather &&
@@ -1108,6 +1285,10 @@
     }
 
     window.CIRCUITS = CIRCUITS;
+    window.surroundingData = surroundingData;
+    window.updateSurroundingLabels = updateSurroundingLabels;
+    window.loadSurroundingForCircuit = loadSurroundingForCircuit;
+    window.map = map;
 
     // ===== WMO weather code → text =====
     const WMO_CODES = {
@@ -1568,7 +1749,8 @@
 
     // ===== Boot =====
     renderPanels();
-    setTimeout(() => setActiveCircuit("imola"), 1800);
+    loadAllCircuitsMini();                              // light fetch — labels for all 8
+    setTimeout(() => setActiveCircuit("imola"), 1800);  // full detail + surrounding fetch for Imola
   </script>
 </body>
 </html>
