@@ -739,7 +739,7 @@
        they overlap the panel's lower area. */
     .map-controls {
       position: fixed;
-      bottom: 70px;
+      bottom: 90px;
       right: 20px;
       z-index: 45;
       display: flex;
