@@ -416,13 +416,127 @@
       letter-spacing: 2px;
       color: rgba(0, 255, 136, 0.7);
     }
-    .bottom-strip .system-ok {
+    .bottom-strip {
+      gap: 24px;
+    }
+    .bottom-strip .sep {
+      margin: 0 12px;
+      color: var(--hud-green-dim);
+    }
+    .bottom-section {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .bottom-section.center {
+      flex: 1;
+      justify-content: center;
+    }
+
+    /* Track state */
+    .track-state {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 3px;
+    }
+    .track-state-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .track-state.dry .track-state-dot {
+      background: var(--hud-green);
+      box-shadow:
+        0 0 10px var(--hud-green),
+        0 0 18px var(--hud-green-glow);
+      animation: blink 1.6s ease-in-out infinite;
+    }
+    .track-state.dry .track-state-text {
       color: var(--hud-green);
       text-shadow: 0 0 6px var(--hud-green-glow);
     }
-    .bottom-strip .sep {
-      margin: 0 14px;
-      color: var(--hud-green-dim);
+    .track-state.damp .track-state-dot {
+      background: var(--hud-amber);
+      box-shadow:
+        0 0 10px var(--hud-amber),
+        0 0 18px rgba(255, 170, 0, 0.45);
+      animation: blink 1s ease-in-out infinite;
+    }
+    .track-state.damp .track-state-text {
+      color: var(--hud-amber);
+      text-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+    }
+    .track-state.wet .track-state-dot {
+      background: var(--hud-red);
+      box-shadow:
+        0 0 10px var(--hud-red),
+        0 0 18px rgba(255, 51, 68, 0.45);
+      animation: blink 0.6s ease-in-out infinite;
+    }
+    .track-state.wet .track-state-text {
+      color: var(--hud-red);
+      text-shadow: 0 0 6px rgba(255, 51, 68, 0.55);
+    }
+    .track-state.standby .track-state-dot {
+      background: rgba(0, 255, 136, 0.35);
+      box-shadow: 0 0 6px var(--hud-green-glow);
+      animation: blink 2s ease-in-out infinite;
+    }
+    .track-state.standby .track-state-text {
+      color: rgba(0, 255, 136, 0.45);
+      text-shadow: none;
+    }
+
+    /* Metric pills */
+    .metric {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 7px;
+      font-family: "Share Tech Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+    }
+    .metric-label {
+      color: rgba(0, 255, 136, 0.5);
+      font-size: 10px;
+      letter-spacing: 2px;
+    }
+    .metric-value {
+      color: var(--hud-green);
+      font-weight: 700;
+      text-shadow: 0 0 5px rgba(0, 255, 136, 0.4);
+    }
+    .metric-value.amber {
+      color: var(--hud-amber);
+      text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);
+    }
+    .metric-value.red {
+      color: var(--hud-red);
+      text-shadow: 0 0 5px rgba(255, 51, 68, 0.55);
+    }
+    .metric-value.cyan {
+      color: var(--hud-cyan);
+      text-shadow: 0 0 5px rgba(0, 221, 255, 0.5);
+    }
+    .metric-value.dim {
+      color: rgba(0, 255, 136, 0.4);
+      text-shadow: none;
+    }
+
+    .coords {
+      font-family: "Share Tech Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: rgba(0, 255, 136, 0.7);
+    }
+    .coords .label {
+      color: rgba(0, 255, 136, 0.45);
+      margin-right: 4px;
     }
 
     /* ===== Left panel: current conditions ===== */
@@ -872,19 +986,15 @@
     </div>
   </div>
 
-  <div class="bottom-strip">
-    <div>
-      <span class="system-ok">● SYSTEM ONLINE</span>
-      <span class="sep">|</span>
-      <span>MAP MODULE: ESRI WORLD IMAGERY</span>
-      <span class="sep">|</span>
-      <span>MARKERS: 8</span>
+  <div class="bottom-strip" id="bottom-strip">
+    <div class="bottom-section">
+      <span class="track-state standby">
+        <span class="track-state-dot"></span>
+        <span class="track-state-text">TRACK STATUS — STANDBY</span>
+      </span>
     </div>
-    <div>
-      <span>SECTOR // GLOBAL</span>
-      <span class="sep">|</span>
-      <span id="cursor-coord">LAT --.----  LNG --.----</span>
-    </div>
+    <div class="bottom-section center"></div>
+    <div class="bottom-section"></div>
   </div>
 
   <div class="grid-overlay"></div>
@@ -993,14 +1103,6 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // ===== Cursor coord readout =====
-    const cursorEl = document.getElementById("cursor-coord");
-    map.on("mousemove", (e) => {
-      const lat = e.latlng.lat.toFixed(4).padStart(8);
-      const lng = e.latlng.lng.toFixed(4).padStart(8);
-      cursorEl.textContent = `LAT ${lat}  LNG ${lng}`;
-    });
-
     // ===== Open-Meteo weather fetch (lazy + cached) =====
     const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
     const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -1026,6 +1128,7 @@
       "weather_code",
       "wind_speed_10m",
       "soil_temperature_0cm",
+      "visibility",
     ];
     const DAILY_VARS = [
       "sunrise",
@@ -1411,9 +1514,126 @@
       `;
     }
 
+    // ===== Track status helpers =====
+    function trackState(precipProb, precipMM) {
+      const prob = precipProb ?? 0;
+      const mm = precipMM ?? 0;
+      if (prob > 60 || mm >= 0.5) return "WET";
+      if (prob >= 20 || mm > 0) return "DAMP";
+      return "DRY";
+    }
+
+    function gripLevel(state, surfaceTemp, windKmh) {
+      if (state === "WET" && (windKmh ?? 0) > 40) return "VERY LOW";
+      if (state === "WET") return "LOW";
+      if (state === "DAMP") return "MEDIUM";
+      // DRY
+      if (surfaceTemp == null) return "MEDIUM";
+      if (surfaceTemp < 20 || surfaceTemp > 50) return "MEDIUM";
+      return "HIGH";
+    }
+
+    function nextRainText(weather) {
+      const cur = weather?.current ?? {};
+      const probs = weather?.hourly?.precipitation_probability;
+      if ((cur.precipitation ?? 0) > 0) return "NOW";
+      const idx = currentHourIndex(weather);
+      if (idx < 0 || !probs) return "—";
+      for (let i = 1; i < 24 && idx + i < probs.length; i++) {
+        if ((probs[idx + i] ?? 0) > 50) return `+${i}H`;
+      }
+      return "—";
+    }
+
+    function metric(label, value, cls = "") {
+      return `<span class="metric"><span class="metric-label">${label}</span><span class="metric-value ${cls}">${value}</span></span>`;
+    }
+
+    function renderBottomStrip() {
+      const stripEl = document.getElementById("bottom-strip");
+      const c = CIRCUITS.find((x) => x.id === activeCircuitId);
+
+      const coordsHTML = c
+        ? `<span class="coords">
+            <span class="label">LAT</span>${c.lat.toFixed(4)}°
+            <span class="sep">/</span>
+            <span class="label">LNG</span>${c.lng.toFixed(4)}°
+            <span class="sep">/</span>
+            <span class="label">ALT</span>${c.elev} M
+          </span>`
+        : "";
+
+      if (!c || !c.weather) {
+        stripEl.innerHTML = `
+          <div class="bottom-section">
+            <span class="track-state standby">
+              <span class="track-state-dot"></span>
+              <span class="track-state-text">TRACK STATUS — ${c ? "ACQUIRING DATA" : "STANDBY"}</span>
+            </span>
+          </div>
+          <div class="bottom-section center"></div>
+          <div class="bottom-section">${coordsHTML}</div>`;
+        return;
+      }
+
+      const cur = c.weather.current ?? {};
+      const hr = c.weather.hourly ?? {};
+      const idx = currentHourIndex(c.weather);
+
+      const precipProb = idx >= 0 ? hr.precipitation_probability?.[idx] : null;
+      const soilTemp   = idx >= 0 ? hr.soil_temperature_0cm?.[idx]      : null;
+      const visMeters  = idx >= 0 ? hr.visibility?.[idx]                : null;
+      const visKm      = visMeters != null ? visMeters / 1000 : null;
+      const wind       = cur.wind_speed_10m;
+      const precipMM   = cur.precipitation;
+
+      const state = trackState(precipProb, precipMM);
+      const grip  = gripLevel(state, soilTemp, wind);
+      const stateCls = state.toLowerCase();
+
+      const surfCls = classifyValue(soilTemp,   { red: 50, amber: 40, low: 15 });
+      const windCls = classifyValue(wind,       { red: 60, amber: 40 });
+      const rainCls = classifyValue(precipProb, { red: 60, amber: 20 });
+      const visCls  =
+        visKm == null ? "dim" :
+        visKm < 5     ? "red" :
+        visKm < 10    ? "amber" : "";
+
+      const nextRain = nextRainText(c.weather);
+      const nextCls =
+        nextRain === "NOW"                 ? "red" :
+        /^\+([123])H$/.test(nextRain)      ? "amber" :
+        /^\+\d+H$/.test(nextRain)          ? "" : "dim";
+
+      const fmt = (v, digits, suffix) =>
+        v == null || Number.isNaN(v) ? "—" : `${v.toFixed(digits)}${suffix}`;
+
+      stripEl.innerHTML = `
+        <div class="bottom-section">
+          <span class="track-state ${stateCls}">
+            <span class="track-state-dot"></span>
+            <span class="track-state-text">TRACK ${state} — ${grip} GRIP</span>
+          </span>
+        </div>
+        <div class="bottom-section center">
+          ${metric("SURF",      fmt(soilTemp, 0, "°C"),    surfCls)}
+          <span class="sep">|</span>
+          ${metric("WIND",      fmt(wind, 0, " km/h"),     windCls)}
+          <span class="sep">|</span>
+          ${metric("RAIN",      fmt(precipProb, 0, "%"),   rainCls)}
+          <span class="sep">|</span>
+          ${metric("NEXT RAIN", nextRain,                  nextCls)}
+          <span class="sep">|</span>
+          ${metric("VIS",       fmt(visKm, 0, " km"),      visCls)}
+        </div>
+        <div class="bottom-section">${coordsHTML}</div>
+      `;
+    }
+
     function renderPanels() {
       renderCurrentPanel();
       renderForecastPanel();
+      renderBottomStrip();
     }
 
     // Default circuit on load — triggers a single fetch for Imola only.
