@@ -930,17 +930,19 @@
     let precipLayerActive = false;
 
     // ===== Surrounding-point labels (4 N/S/E/W points around active circuit) =====
-    const SURROUNDING_OFFSET = 0.05;   // ~5.5 km — close enough to stay in zoom-14 viewport
+    const SURROUNDING_OFFSET = 0.025;  // ~2.7 km — tight enough to avoid panel corners
     const SURROUNDING_MIN_ZOOM = 13;   // hide when zoomed out beyond this (track-visible only)
     const surroundingData = new Map(); // id → { lat, lng, current, fetchedAt }
     let surroundingLoadToken = 0;
 
     function getSurroundingPoints(c) {
+      // Diagonal layout (NE/NW/SE/SW) keeps labels in the open quadrants of
+      // the screen — out of the way of the left/right panels and top/bottom bars.
       return [
-        { id: `${c.id}-n`, lat: c.lat + SURROUNDING_OFFSET, lng: c.lng                       },
-        { id: `${c.id}-s`, lat: c.lat - SURROUNDING_OFFSET, lng: c.lng                       },
-        { id: `${c.id}-e`, lat: c.lat,                      lng: c.lng + SURROUNDING_OFFSET },
-        { id: `${c.id}-w`, lat: c.lat,                      lng: c.lng - SURROUNDING_OFFSET },
+        { id: `${c.id}-ne`, lat: c.lat + SURROUNDING_OFFSET, lng: c.lng + SURROUNDING_OFFSET },
+        { id: `${c.id}-nw`, lat: c.lat + SURROUNDING_OFFSET, lng: c.lng - SURROUNDING_OFFSET },
+        { id: `${c.id}-se`, lat: c.lat - SURROUNDING_OFFSET, lng: c.lng + SURROUNDING_OFFSET },
+        { id: `${c.id}-sw`, lat: c.lat - SURROUNDING_OFFSET, lng: c.lng - SURROUNDING_OFFSET },
       ];
     }
 
