@@ -761,10 +761,13 @@
     .coords .sep { color: var(--text-faint); margin: 0 8px; }
 
     /* ===== Map controls (dark pills) ===== */
+    /* Floats over the bottom-right corner of the viewport. z-index 45 keeps
+       it above the right panel (z 40) so the buttons read cleanly even when
+       they overlap the panel's lower area. */
     .map-controls {
       position: fixed;
-      bottom: 108px;
-      right: 400px;
+      bottom: 70px;
+      right: 20px;
       z-index: 45;
       display: flex;
       flex-direction: column;
@@ -886,7 +889,7 @@
       { id: "bahrain",    name: "Bahrain",    tab: "Bahrain",    full: "Bahrain International Circuit", country: "Bahrain", flag: "🇧🇭", lat:  26.0325, lng:  50.5106, elev:   7 },
     ];
 
-    const CIRCUIT_ZOOM = 14;
+    const CIRCUIT_ZOOM = 15;
 
     // ===== Icons =====
     const ICONS = {
