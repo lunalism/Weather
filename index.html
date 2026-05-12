@@ -944,6 +944,47 @@
       color: var(--hud-cyan);
       text-shadow: 0 0 6px rgba(0, 221, 255, 0.5);
     }
+
+    /* Transient "UPDATED" toast above the bottom strip */
+    .update-toast {
+      position: fixed;
+      bottom: 84px;
+      left: 50%;
+      transform: translate(-50%, 10px);
+      z-index: 60;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 18px;
+      background: var(--bg-panel);
+      border: 1px solid var(--hud-cyan);
+      backdrop-filter: blur(6px);
+      box-shadow:
+        0 0 14px rgba(0, 221, 255, 0.45),
+        inset 0 0 18px rgba(0, 221, 255, 0.08);
+      font-family: "Orbitron", sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--hud-cyan);
+      text-shadow: 0 0 6px rgba(0, 221, 255, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+    }
+    .update-toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .update-toast::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--hud-cyan);
+      box-shadow: 0 0 8px var(--hud-cyan);
+      animation: blink 0.8s ease-in-out infinite;
+    }
   </style>
 </head>
 <body>
@@ -997,6 +1038,8 @@
     <div class="bottom-section"></div>
   </div>
 
+  <div id="update-toast" class="update-toast">UPDATED</div>
+
   <div class="grid-overlay"></div>
   <div class="vignette"></div>
   <div class="scanlines"></div>
@@ -1018,20 +1061,31 @@
     const CIRCUIT_ZOOM = 14;
 
     // ===== Map init =====
+    // TV display: no controls, no manual panning/zooming.
+    // Navigation happens via tabs + marker clicks, which call flyTo.
     const map = L.map("map", {
-      zoomControl: true,
-      attributionControl: true,
+      zoomControl: false,
+      attributionControl: false,
       worldCopyJump: true,
       preferCanvas: true,
-    }).setView([30, 20], 3);
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      touchZoom: false,
+    });
 
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      {
-        attribution: "Tiles &copy; Esri — World Imagery",
-        maxZoom: 18,
-      }
+      { maxZoom: 18 }
     ).addTo(map);
+
+    // Initial view: fit all 8 circuits so every marker is visible.
+    const ALL_CIRCUITS_BOUNDS = L.latLngBounds(
+      CIRCUITS.map((c) => [c.lat, c.lng])
+    ).pad(0.25);
+    map.fitBounds(ALL_CIRCUITS_BOUNDS, { animate: false });
 
     // Pulse marker icon
     const pulseIcon = L.divIcon({
@@ -1174,10 +1228,12 @@
       if (activeCircuitId === c.id) renderPanels();
 
       const t0 = performance.now();
+      let updated = false;
       try {
         const data = await fetchCircuitWeather(c);
         c.weather = data;
         c.weatherFetchedAt = Date.now();
+        updated = true;
         const dt = (performance.now() - t0).toFixed(0);
         console.log(`[RaceWeather] ${c.id} fetched in ${dt}ms`, {
           tempC: data.current?.temperature_2m,
@@ -1194,7 +1250,17 @@
       } finally {
         c.weatherLoading = false;
         if (activeCircuitId === c.id) renderPanels();
+        if (updated && activeCircuitId === c.id) showUpdateToast();
       }
+    }
+
+    let updateToastTimer = null;
+    function showUpdateToast() {
+      const el = document.getElementById("update-toast");
+      if (!el) return;
+      el.classList.add("show");
+      clearTimeout(updateToastTimer);
+      updateToastTimer = setTimeout(() => el.classList.remove("show"), 2000);
     }
 
     // Expose for console inspection: `CIRCUITS[0].weather`
@@ -1636,9 +1702,13 @@
       renderBottomStrip();
     }
 
-    // Default circuit on load — triggers a single fetch for Imola only.
-    // Subsequent circuits fetch lazily on tab/marker click, cached for 10min.
-    setActiveCircuit("imola", { fly: false });
+    // Boot sequence:
+    //  1. Map opens at world view showing all 8 circuits (handled above).
+    //  2. After a short beat, auto-select Imola — activates the tab,
+    //     flies the map there, and triggers its first fetch. Subsequent
+    //     circuits fetch lazily on tab/marker click, cached for 10min.
+    renderPanels(); // initial STANDBY paint
+    setTimeout(() => setActiveCircuit("imola"), 1800);
   </script>
 </body>
 </html>
