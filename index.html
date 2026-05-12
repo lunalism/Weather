@@ -930,8 +930,8 @@
     let precipLayerActive = false;
 
     // ===== Surrounding-point labels (4 N/S/E/W points around active circuit) =====
-    const SURROUNDING_OFFSET = 0.15;   // ~15 km in degrees
-    const SURROUNDING_MIN_ZOOM = 10;   // hide when zoomed out beyond this
+    const SURROUNDING_OFFSET = 0.04;   // ~4.4 km — must stay inside viewport at zoom 14
+    const SURROUNDING_MIN_ZOOM = 13;   // hide when zoomed out beyond this (track-visible only)
     const surroundingData = new Map(); // id → { lat, lng, current, fetchedAt }
     let surroundingLoadToken = 0;
 
@@ -978,24 +978,18 @@
     function updateSurroundingLabels() {
       surroundingLayer.clearLayers();
       const zoom = map.getZoom();
+      if (zoom < SURROUNDING_MIN_ZOOM) return;
       const c = CIRCUITS.find((x) => x.id === activeCircuitId);
-      // Zoom check intentionally disabled for now — surfaces labels regardless
-      // so we can verify the render path. Re-add `if (zoom < 10) return;` once
-      // visibility is confirmed.
-      if (!c) {
-        console.log(`[RaceWeather] updateSurroundingLabels: no active circuit`);
-        return;
-      }
-      const points = getSurroundingPoints(c);
+      if (!c) return;
+      const bounds = map.getBounds();
       let rendered = 0;
-      let pending = 0;
-      points.forEach((p) => {
+      let offScreen = 0;
+      getSurroundingPoints(c).forEach((p) => {
         const data = surroundingData.get(p.id);
-        if (!data?.current) {
-          pending++;
-          return;
-        }
-        L.marker([p.lat, p.lng], {
+        if (!data?.current) return;
+        const ll = L.latLng(p.lat, p.lng);
+        if (!bounds.contains(ll)) offScreen++;
+        L.marker(ll, {
           icon: makeMapLabelIcon({
             dir:  data.current.wind_direction_10m,
             temp: data.current.temperature_2m,
@@ -1008,7 +1002,7 @@
         rendered++;
       });
       console.log(
-        `[RaceWeather] updateSurroundingLabels: active=${activeCircuitId}, zoom=${zoom.toFixed(1)}, rendered=${rendered}/${points.length}, pending=${pending}`
+        `[RaceWeather] surrounding render: ${rendered} markers added, ${offScreen} outside viewport (zoom ${zoom.toFixed(1)})`
       );
     }
 
