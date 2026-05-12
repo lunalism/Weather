@@ -51,7 +51,7 @@ const MINI_VARS = [
 ];
 
 // Surrounding-point labels around the active circuit
-const SURROUNDING_OFFSET = 0.012;  // ~1.3 km — fits inside viewport at zoom 15 (≈279px)
+const SURROUNDING_OFFSET = 0.008;  // ~0.9 km — hugs the track outline at zoom 15 (≈186px)
 const SURROUNDING_MIN_ZOOM = 15;   // hide when zoomed out beyond this (close-up only)
 
 // WMO weather codes → display strings
