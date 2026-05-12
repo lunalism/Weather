@@ -565,6 +565,109 @@
       const lng = e.latlng.lng.toFixed(4).padStart(8);
       cursorEl.textContent = `LAT ${lat}  LNG ${lng}`;
     });
+
+    // ===== Open-Meteo weather fetch =====
+    const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
+    const WEATHER_REFRESH_MS = 10 * 60 * 1000; // 10 minutes
+
+    const CURRENT_VARS = [
+      "temperature_2m",
+      "relative_humidity_2m",
+      "apparent_temperature",
+      "precipitation",
+      "rain",
+      "weather_code",
+      "cloud_cover",
+      "surface_pressure",
+      "wind_speed_10m",
+      "wind_direction_10m",
+      "wind_gusts_10m",
+      "is_day",
+    ];
+    const HOURLY_VARS = [
+      "temperature_2m",
+      "precipitation_probability",
+      "weather_code",
+      "wind_speed_10m",
+      "soil_temperature_0cm",
+    ];
+    const DAILY_VARS = [
+      "sunrise",
+      "sunset",
+      "uv_index_max",
+      "temperature_2m_max",
+      "temperature_2m_min",
+    ];
+
+    function buildWeatherURL(c) {
+      const params = new URLSearchParams({
+        latitude: c.lat,
+        longitude: c.lng,
+        current: CURRENT_VARS.join(","),
+        hourly: HOURLY_VARS.join(","),
+        daily: DAILY_VARS.join(","),
+        forecast_days: "1",
+        timezone: "auto",
+      });
+      return `${WEATHER_API}?${params}`;
+    }
+
+    async function fetchCircuitWeather(c) {
+      const res = await fetch(buildWeatherURL(c));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    async function refreshAllWeather() {
+      const t0 = performance.now();
+      const stamp = new Date().toISOString();
+      console.log(`[RaceWeather] fetching ${CIRCUITS.length} circuits @ ${stamp}`);
+
+      const results = await Promise.allSettled(CIRCUITS.map(fetchCircuitWeather));
+      let ok = 0;
+      let fail = 0;
+
+      results.forEach((r, i) => {
+        const c = CIRCUITS[i];
+        if (r.status === "fulfilled") {
+          c.weather = r.value;
+          c.weatherFetchedAt = Date.now();
+          ok++;
+        } else {
+          fail++;
+          console.warn(
+            `[RaceWeather] ${c.id} fetch failed — keeping last data`,
+            r.reason
+          );
+        }
+      });
+
+      const dt = (performance.now() - t0).toFixed(0);
+      console.log(
+        `[RaceWeather] refresh done in ${dt}ms — ok=${ok} fail=${fail}`,
+        Object.fromEntries(
+          CIRCUITS.map((c) => [
+            c.id,
+            c.weather
+              ? {
+                  tempC: c.weather.current?.temperature_2m,
+                  rainMM: c.weather.current?.precipitation,
+                  windKmh: c.weather.current?.wind_speed_10m,
+                  windDir: c.weather.current?.wind_direction_10m,
+                  weatherCode: c.weather.current?.weather_code,
+                  fetchedAt: new Date(c.weatherFetchedAt).toISOString(),
+                }
+              : null,
+          ])
+        )
+      );
+    }
+
+    // Expose for console inspection: `CIRCUITS[0].weather`
+    window.CIRCUITS = CIRCUITS;
+
+    refreshAllWeather();
+    setInterval(refreshAllWeather, WEATHER_REFRESH_MS);
   </script>
 </body>
 </html>
