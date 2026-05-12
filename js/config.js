@@ -5,7 +5,7 @@
 const CIRCUITS = [
   { id: "imola",      name: "Imola",      tab: "Imola",      full: "Autodromo Enzo e Dino Ferrari", country: "Italy",   flag: "🇮🇹", lat:  44.3439, lng:  11.7167, elev:  47 },
   { id: "spa",        name: "Spa",        tab: "Spa",        full: "Circuit de Spa-Francorchamps",  country: "Belgium", flag: "🇧🇪", lat:  50.4372, lng:   5.9714, elev: 401 },
-  { id: "lemans",     name: "Le Mans",    tab: "Le Mans",    full: "Circuit de la Sarthe",          country: "France",  flag: "🇫🇷", lat:  47.9562, lng:   0.2075, elev:  62 },
+  { id: "lemans",     name: "Le Mans",    tab: "Le Mans",    full: "Circuit de la Sarthe",          country: "France",  flag: "🇫🇷", lat:  47.9350, lng:   0.2220, elev:  62, zoom: 13 },
   { id: "interlagos", name: "Interlagos", tab: "Interlagos", full: "Autódromo José Carlos Pace",    country: "Brazil",  flag: "🇧🇷", lat: -23.7036, lng: -46.6997, elev: 750 },
   { id: "cota",       name: "COTA",       tab: "COTA",       full: "Circuit of the Americas",       country: "USA",     flag: "🇺🇸", lat:  30.1328, lng: -97.6411, elev: 163 },
   { id: "fuji",       name: "Fuji",       tab: "Fuji",       full: "Fuji Speedway",                 country: "Japan",   flag: "🇯🇵", lat:  35.3725, lng: 138.9267, elev: 560 },
@@ -13,6 +13,9 @@ const CIRCUITS = [
   { id: "bahrain",    name: "Bahrain",    tab: "Bahrain",    full: "Bahrain International Circuit", country: "Bahrain", flag: "🇧🇭", lat:  26.0325, lng:  50.5106, elev:   7 },
 ];
 
+// Default zoom for circuits that don't override it.
+// Per-circuit override: set `zoom` on the CIRCUITS entry (e.g., Le Mans = 13
+// because the 13.6 km Sarthe lap doesn't fit at zoom 15).
 const CIRCUIT_ZOOM = 15;
 
 // Inline SVG icons (stroke-based, monochrome)

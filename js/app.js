@@ -14,7 +14,7 @@ function setActiveCircuit(id, { fly = true } = {}) {
 
   const c = CIRCUITS.find((x) => x.id === id);
   if (fly && c) {
-    map.flyTo([c.lat, c.lng], CIRCUIT_ZOOM, { duration: 1.8 });
+    map.flyTo([c.lat, c.lng], c.zoom ?? CIRCUIT_ZOOM, { duration: 1.8 });
   }
 
   renderPanels();
