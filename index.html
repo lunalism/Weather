@@ -424,12 +424,240 @@
       margin: 0 14px;
       color: var(--hud-green-dim);
     }
+
+    /* ===== Left panel: current conditions ===== */
+    .panel {
+      position: fixed;
+      z-index: 40;
+      background: var(--bg-panel);
+      border: 1px solid var(--hud-green-dim);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: var(--hud-green);
+      box-shadow:
+        0 0 24px rgba(0, 255, 136, 0.08),
+        inset 0 0 36px rgba(0, 255, 136, 0.04);
+    }
+    .panel-left {
+      top: 110px;
+      bottom: 80px;
+      left: 60px;
+      width: 340px;
+      padding: 22px 20px 18px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .panel-label {
+      position: absolute;
+      top: -9px;
+      left: 18px;
+      padding: 0 8px;
+      background: var(--bg-deep);
+      font-family: "Orbitron", sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--hud-cyan);
+      text-shadow: 0 0 6px rgba(0, 221, 255, 0.5);
+    }
+    .panel-corner {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border-color: var(--hud-green);
+      filter: drop-shadow(0 0 4px var(--hud-green-glow));
+      pointer-events: none;
+    }
+    .panel-corner.tl { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; }
+    .panel-corner.tr { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; }
+    .panel-corner.bl { bottom: -1px; left: -1px; border-bottom: 2px solid; border-left: 2px solid; }
+    .panel-corner.br { bottom: -1px; right: -1px; border-bottom: 2px solid; border-right: 2px solid; }
+
+    .panel-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .panel-placeholder {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Orbitron", sans-serif;
+      font-size: 12px;
+      letter-spacing: 4px;
+      color: rgba(0, 255, 136, 0.45);
+      text-align: center;
+    }
+    .panel-placeholder .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: var(--hud-amber);
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+      box-shadow: 0 0 6px var(--hud-amber);
+      animation: blink 1.4s ease-in-out infinite;
+    }
+
+    .circuit-id {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .circuit-id .flag {
+      font-size: 36px;
+      line-height: 1;
+      filter: saturate(1.15) drop-shadow(0 0 6px rgba(0,0,0,0.5));
+    }
+    .circuit-id .name {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: 4px;
+      color: var(--hud-green);
+      text-shadow: 0 0 8px var(--hud-green-glow);
+      line-height: 1.1;
+    }
+    .circuit-id .full {
+      font-family: "Share Tech Mono", monospace;
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      color: rgba(0, 255, 136, 0.55);
+      margin-top: 4px;
+    }
+
+    .weather-state {
+      font-family: "Orbitron", sans-serif;
+      font-size: 13px;
+      letter-spacing: 3px;
+      color: var(--hud-cyan);
+      text-shadow: 0 0 8px rgba(0, 221, 255, 0.5);
+      padding: 8px 10px;
+      border-top: 1px solid var(--hud-green-dim);
+      border-bottom: 1px solid var(--hud-green-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .weather-state .day-tag {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: rgba(0, 255, 136, 0.6);
+      text-shadow: none;
+    }
+
+    .temp-block {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 4px 0 6px;
+    }
+    .temp-big {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: 76px;
+      line-height: 0.85;
+      color: var(--hud-green);
+      text-shadow:
+        0 0 12px var(--hud-green-glow),
+        0 0 28px rgba(0, 255, 136, 0.35);
+      letter-spacing: -2px;
+    }
+    .temp-big .unit {
+      font-size: 24px;
+      vertical-align: top;
+      margin-left: 4px;
+      color: rgba(0, 255, 136, 0.55);
+      letter-spacing: 0;
+    }
+    .temp-meta {
+      text-align: right;
+      font-family: "Share Tech Mono", monospace;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: rgba(0, 255, 136, 0.6);
+      line-height: 1.4;
+    }
+    .temp-meta .feels-value {
+      display: block;
+      font-size: 16px;
+      color: var(--hud-green);
+      text-shadow: 0 0 6px var(--hud-green-glow);
+      margin-top: 2px;
+    }
+
+    .data-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      font-family: "Share Tech Mono", monospace;
+      font-size: 12px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .data-rows::-webkit-scrollbar { width: 4px; }
+    .data-rows::-webkit-scrollbar-thumb { background: var(--hud-green-dim); }
+
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      padding: 6px 2px;
+      border-bottom: 1px dashed rgba(0, 255, 136, 0.12);
+      letter-spacing: 1.5px;
+    }
+    .data-row:last-child { border-bottom: 0; }
+    .data-row .label {
+      color: rgba(0, 255, 136, 0.5);
+      font-size: 11px;
+    }
+    .data-row .value {
+      color: var(--hud-green);
+      font-weight: 700;
+      text-align: right;
+      letter-spacing: 1.5px;
+    }
+    .data-row .value.amber {
+      color: var(--hud-amber);
+      text-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+    }
+    .data-row .value.red {
+      color: var(--hud-red);
+      text-shadow: 0 0 6px rgba(255, 51, 68, 0.55);
+    }
+    .data-row .value.cyan {
+      color: var(--hud-cyan);
+      text-shadow: 0 0 6px rgba(0, 221, 255, 0.45);
+    }
+    .data-row .value.dim {
+      color: rgba(0, 255, 136, 0.45);
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <div id="map"></div>
   </div>
+
+  <aside class="panel panel-left" id="panel-left">
+    <span class="panel-label">CURRENT CONDITIONS</span>
+    <span class="panel-corner tl"></span>
+    <span class="panel-corner tr"></span>
+    <span class="panel-corner bl"></span>
+    <span class="panel-corner br"></span>
+    <div class="panel-body" id="panel-current">
+      <div class="panel-placeholder">
+        <div><span class="dot"></span>STANDBY</div>
+      </div>
+    </div>
+  </aside>
 
   <div class="top-strip">
     <div class="brand">RACE<span class="accent">WEATHER</span></div>
@@ -522,6 +750,8 @@
         const c = CIRCUITS.find((x) => x.id === id);
         if (c) map.flyTo([c.lat, c.lng], CIRCUIT_ZOOM, { duration: 1.8 });
       }
+
+      renderCurrentPanel();
     }
 
     CIRCUITS.forEach((c) => {
@@ -583,6 +813,7 @@
       "wind_direction_10m",
       "wind_gusts_10m",
       "is_day",
+      "dew_point_2m",
     ];
     const HOURLY_VARS = [
       "temperature_2m",
@@ -661,10 +892,166 @@
           ])
         )
       );
+
+      renderCurrentPanel();
     }
 
     // Expose for console inspection: `CIRCUITS[0].weather`
     window.CIRCUITS = CIRCUITS;
+
+    // ===== WMO weather code → text =====
+    const WMO_CODES = {
+      0:  "CLEAR SKY",
+      1:  "MAINLY CLEAR",
+      2:  "PARTLY CLOUDY",
+      3:  "OVERCAST",
+      45: "FOG",
+      48: "RIME FOG",
+      51: "LIGHT DRIZZLE",
+      53: "DRIZZLE",
+      55: "DENSE DRIZZLE",
+      56: "FREEZING DRIZZLE",
+      57: "FREEZING DRIZZLE",
+      61: "LIGHT RAIN",
+      63: "RAIN",
+      65: "HEAVY RAIN",
+      66: "FREEZING RAIN",
+      67: "FREEZING RAIN",
+      71: "LIGHT SNOW",
+      73: "SNOW",
+      75: "HEAVY SNOW",
+      77: "SNOW GRAINS",
+      80: "LIGHT SHOWERS",
+      81: "SHOWERS",
+      82: "VIOLENT SHOWERS",
+      85: "SNOW SHOWERS",
+      86: "HEAVY SNOW SHOWERS",
+      95: "THUNDERSTORM",
+      96: "THUNDERSTORM + HAIL",
+      99: "SEVERE THUNDERSTORM",
+    };
+    const weatherCodeText = (code) => WMO_CODES[code] ?? `CODE ${code}`;
+
+    // ===== Render helpers =====
+    function uvLabel(uv) {
+      if (uv == null) return { text: "—", cls: "dim" };
+      if (uv >= 11) return { text: `EXTREME ${uv.toFixed(0)}`, cls: "red" };
+      if (uv >= 8)  return { text: `VERY HIGH ${uv.toFixed(0)}`, cls: "red" };
+      if (uv >= 6)  return { text: `HIGH ${uv.toFixed(0)}`, cls: "amber" };
+      if (uv >= 3)  return { text: `MODERATE ${uv.toFixed(0)}`, cls: "" };
+      return { text: `LOW ${uv.toFixed(0)}`, cls: "cyan" };
+    }
+
+    function classifyValue(v, { red, amber, low } = {}) {
+      if (v == null || Number.isNaN(v)) return "dim";
+      if (red != null && v >= red) return "red";
+      if (amber != null && v >= amber) return "amber";
+      if (low != null && v <= low) return "amber";
+      return "";
+    }
+
+    function formatHM(iso) {
+      // "2026-05-12T05:42" → "05:42"
+      if (!iso) return "—";
+      const m = iso.match(/T(\d{2}:\d{2})/);
+      return m ? m[1] : iso;
+    }
+
+    function currentHourIndex(weather) {
+      const t = weather?.current?.time;
+      if (!t || !weather?.hourly?.time) return -1;
+      return weather.hourly.time.indexOf(t);
+    }
+
+    function row(label, value, cls = "") {
+      return `<div class="data-row"><span class="label">${label}</span><span class="value ${cls}">${value}</span></div>`;
+    }
+
+    function renderCurrentPanel() {
+      const el = document.getElementById("panel-current");
+      const c = CIRCUITS.find((x) => x.id === activeCircuitId);
+
+      if (!c) {
+        el.innerHTML = `<div class="panel-placeholder"><div><span class="dot"></span>SELECT CIRCUIT</div></div>`;
+        return;
+      }
+      if (!c.weather) {
+        el.innerHTML = `
+          <div class="circuit-id">
+            <span class="flag">${c.flag}</span>
+            <div>
+              <div class="name">${c.name}</div>
+              <div class="full">${c.full}</div>
+            </div>
+          </div>
+          <div class="panel-placeholder"><div><span class="dot"></span>ACQUIRING DATA…</div></div>`;
+        return;
+      }
+
+      const w = c.weather;
+      const cur = w.current ?? {};
+      const hr = w.hourly ?? {};
+      const dy = w.daily ?? {};
+      const hIdx = currentHourIndex(w);
+
+      const precipProb = hIdx >= 0 ? hr.precipitation_probability?.[hIdx] : null;
+      const soilTemp   = hIdx >= 0 ? hr.soil_temperature_0cm?.[hIdx]      : null;
+
+      const uv = uvLabel(dy.uv_index_max?.[0]);
+
+      const soilCls   = classifyValue(soilTemp,   { red: 50, amber: 40, low: 15 });
+      const precipCls = classifyValue(precipProb, { red: 70, amber: 40 });
+
+      const temp     = cur.temperature_2m;
+      const feels    = cur.apparent_temperature;
+      const humidity = cur.relative_humidity_2m;
+      const pressure = cur.surface_pressure;
+      const clouds   = cur.cloud_cover;
+      const dew      = cur.dew_point_2m;
+      const isDay    = cur.is_day === 1;
+      const wcText   = weatherCodeText(cur.weather_code);
+
+      const fmt = (v, digits = 0, suffix = "") =>
+        v == null || Number.isNaN(v) ? "—" : `${v.toFixed(digits)}${suffix}`;
+
+      el.innerHTML = `
+        <div class="circuit-id">
+          <span class="flag">${c.flag}</span>
+          <div>
+            <div class="name">${c.name}</div>
+            <div class="full">${c.full}</div>
+          </div>
+        </div>
+
+        <div class="weather-state">
+          <span>${wcText}</span>
+          <span class="day-tag">${isDay ? "DAY" : "NIGHT"}</span>
+        </div>
+
+        <div class="temp-block">
+          <div class="temp-big">${fmt(temp, 0)}<span class="unit">°C</span></div>
+          <div class="temp-meta">
+            FEELS LIKE
+            <span class="feels-value">${fmt(feels, 1, " °C")}</span>
+          </div>
+        </div>
+
+        <div class="data-rows">
+          ${row("SURFACE TEMP",   fmt(soilTemp, 1, " °C"),       soilCls)}
+          ${row("HUMIDITY",       fmt(humidity, 0, " %"))}
+          ${row("PRESSURE",       fmt(pressure, 0, " hPa"))}
+          ${row("PRECIP PROB",    fmt(precipProb, 0, " %"),      precipCls)}
+          ${row("CLOUD COVER",    fmt(clouds, 0, " %"))}
+          ${row("UV INDEX",       uv.text,                       uv.cls)}
+          ${row("DEW POINT",      fmt(dew, 1, " °C"))}
+          ${row("SUNRISE",        formatHM(dy.sunrise?.[0]),     "cyan")}
+          ${row("SUNSET",         formatHM(dy.sunset?.[0]),      "cyan")}
+        </div>
+      `;
+    }
+
+    // Default active circuit (panel has data on first paint) — no map fly
+    setActiveCircuit("imola", { fly: false });
 
     refreshAllWeather();
     setInterval(refreshAllWeather, WEATHER_REFRESH_MS);
