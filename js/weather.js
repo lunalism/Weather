@@ -127,6 +127,7 @@ async function loadAllCircuitsMini() {
     try {
       c.mini = await fetchMiniWeather(c.lat, c.lng);
       updateMapLabels();
+      updatePrecipLayer();  // refresh if precip toggle is active
     } catch (err) {
       console.warn(`[RaceWeather] mini fetch failed for ${c.id}`, err);
     }

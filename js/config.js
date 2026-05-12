@@ -42,12 +42,15 @@ const DAILY_VARS = [
   "temperature_2m_max", "temperature_2m_min",
 ];
 
-// Mini fetch — label-only (no hourly/daily)
+// Mini fetch — label-only (no hourly/daily).
+// Includes precipitation so the precip-layer toggle has data for every circuit
+// after the bootstrap loadAllCircuitsMini run, not just the active one.
 const MINI_VARS = [
   "temperature_2m",
   "wind_speed_10m",
   "wind_direction_10m",
   "weather_code",
+  "precipitation",
 ];
 
 // Surrounding-point labels around the active circuit

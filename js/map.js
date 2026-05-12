@@ -132,24 +132,39 @@ function updateSurroundingLabels() {
 }
 
 // ===== Precipitation overlay (toggleable) =====
+// Renders a "X.X mm" pill below each circuit marker. Stays visible at 0mm
+// (faint style) so the toggle gives unambiguous on/off feedback.
+function precipClass(mm) {
+  if (mm == null || mm === 0) return "zero";
+  if (mm < 2.5) return "light";
+  if (mm < 7.5) return "moderate";
+  return "heavy";
+}
+
+function makePrecipLabelIcon(mm) {
+  const cls = precipClass(mm);
+  const text = mm == null ? "—" : `${mm.toFixed(1)} mm`;
+  return L.divIcon({
+    className: "",
+    html: `<div class="precip-label-anchor"><div class="precip-label ${cls}">${text}</div></div>`,
+    iconSize: [80, 24],
+    // Negative y_anchor pulls the label below the geographic point — sits
+    // ~14px below the circuit marker (which is 16px wide around geo).
+    iconAnchor: [40, -14],
+  });
+}
+
 function updatePrecipLayer() {
   precipLayer.clearLayers();
   if (!precipLayerActive) return;
   CIRCUITS.forEach((c) => {
-    if (!c.weather) return;
-    const idx = currentHourIndex(c.weather);
-    const prob = idx >= 0 ? c.weather.hourly?.precipitation_probability?.[idx] : null;
-    if (prob == null) return;
-    const color = prob > 60 ? "#ff6b6b" : prob > 30 ? "#ffd166" : "#74b9ff";
-    const fillOpacity = 0.12 + Math.min(prob, 100) / 100 * 0.42;
-    L.circle([c.lat, c.lng], {
-      radius: 70000,
-      color,
-      fillColor: color,
-      fillOpacity,
-      weight: 1,
-      opacity: 0.55,
+    // Prefer full weather, fall back to mini (which now also carries precipitation)
+    const src = c.weather?.current ?? c.mini;
+    if (!src) return;
+    L.marker([c.lat, c.lng], {
+      icon: makePrecipLabelIcon(src.precipitation),
       interactive: false,
+      keyboard: false,
     }).addTo(precipLayer);
   });
 }
