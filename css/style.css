@@ -1,0 +1,811 @@
+    :root {
+      --accent: #3b82f6;
+      --text:        #ffffff;
+      --text-sub:    rgba(255, 255, 255, 0.72);
+      --text-muted:  rgba(255, 255, 255, 0.55);
+      --text-faint:  rgba(255, 255, 255, 0.35);
+
+      /* Translucent glass cards */
+      --card-bg:        rgba(255, 255, 255, 0.16);
+      --card-bg-strong: rgba(255, 255, 255, 0.22);
+      --card-border:    rgba(255, 255, 255, 0.20);
+
+      /* Dark pills for map overlays */
+      --overlay-dark:        rgba(18, 22, 32, 0.78);
+      --overlay-dark-strong: rgba(24, 28, 38, 0.90);
+      --overlay-dark-border: rgba(255, 255, 255, 0.18);
+
+      /* Status colors tuned for white-on-color readability */
+      --warn-amber:  #ffd166;
+      --warn-red:    #ff8181;
+      --warn-green:  #75e6a1;
+
+      --shadow-card:    0 8px 32px rgba(0, 0, 0, 0.14);
+      --shadow-overlay: 0 4px 16px rgba(0, 0, 0, 0.32);
+
+      --radius-card: 20px;
+      --radius-pill: 12px;
+      --radius-btn:  14px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1a1a3e; /* dark fallback until gradient paints */
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, "SF Pro Text", sans-serif;
+      font-feature-settings: "tnum" 1, "cv11" 1;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    button { font-family: inherit; color: inherit; cursor: pointer; }
+
+    /* ===== Map ===== */
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background: #1a1a3e;
+    }
+    .leaflet-container { background: #1a1a3e; font-family: "Inter", sans-serif; }
+    .leaflet-control-attribution { display: none !important; }
+
+    /* Gradient overlay sits between tile pane and overlay/marker panes inside #map's
+       stacking context — markers, tooltips and precipitation circles stay above it. */
+    .bg-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 250;
+      pointer-events: none;
+      background: linear-gradient(
+        135deg,
+        rgba(74, 144, 217, 0.5),
+        rgba(116, 185, 255, 0.4)
+      );
+      transition: background 1.4s ease;
+    }
+
+    /* Circuit markers */
+    .circuit-marker { position: relative; width: 16px; height: 16px; }
+    .circuit-marker .core {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 12px;
+      height: 12px;
+      background: white;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 4px rgba(255, 255, 255, 0.22),
+        0 2px 6px rgba(0, 0, 0, 0.35);
+      transition: all 0.3s ease;
+    }
+    .circuit-marker .ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.78);
+      opacity: 0;
+      animation: pulse-ring 2.8s ease-out infinite;
+      pointer-events: none;
+    }
+    @keyframes pulse-ring {
+      0%        { transform: scale(0.6); opacity: 0.85; }
+      80%, 100% { transform: scale(3);   opacity: 0; }
+    }
+
+    /* Map label: dark pill with arrow + temp */
+    /* Flex wrapper that fills the Leaflet icon box so the inline-flex pill
+       inside centers correctly both axes. Missing width/height: 100% was
+       causing labels to render at the top-left of the icon box. */
+    .map-label-anchor {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .map-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--overlay-dark);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid var(--overlay-dark-border);
+      border-radius: 16px;
+      color: white;
+      font-family: "Inter", sans-serif;
+      font-size: 18px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      box-shadow: var(--shadow-overlay);
+      white-space: nowrap;
+      letter-spacing: -0.2px;
+    }
+    .map-label .arrow {
+      width: 14px; height: 14px;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: transform 0.6s ease;
+    }
+    .map-label .arrow svg { width: 100%; height: 100%; fill: white; }
+
+    /* Smaller, dimmer variant for surrounding-point labels.
+       Roughly 0.8× of main (18px → 14px). */
+    .map-label.map-label-sm {
+      padding: 4px 10px;
+      font-size: 14px;
+      font-weight: 500;
+      gap: 6px;
+      border-radius: 13px;
+      background: rgba(18, 22, 32, 0.7);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.32);
+      color: rgba(255, 255, 255, 0.95);
+    }
+    .map-label.map-label-sm .arrow { width: 11px; height: 11px; }
+    .map-label.map-label-sm .wind { opacity: 0.85; }
+
+    /* Leaflet tooltip — dark pill */
+    .leaflet-tooltip.circuit-tooltip {
+      background: var(--overlay-dark);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      color: white;
+      border: 1px solid var(--overlay-dark-border);
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-family: "Inter", sans-serif;
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: 0.2px;
+      box-shadow: var(--shadow-overlay);
+    }
+    .leaflet-tooltip.circuit-tooltip::before { display: none; }
+
+    /* ===== Top bar ===== */
+    .top-bar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      z-index: 50;
+      padding: 14px 22px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .brand {
+      font-family: "Orbitron", sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      letter-spacing: 0.4px;
+      color: var(--text);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .brand .accent { color: rgba(255, 255, 255, 0.75); font-weight: 400; }
+
+    .tabs {
+      display: flex;
+      flex: 1;
+      justify-content: center;
+      gap: 4px;
+      overflow: hidden;
+    }
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: transparent;
+      border: 0;
+      border-radius: var(--radius-pill);
+      font-family: "Inter", sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      letter-spacing: 0.2px;
+      color: rgba(255, 255, 255, 0.62);
+      white-space: nowrap;
+      transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .tab .flag { font-size: 16px; line-height: 1; }
+    .tab:hover:not(.active) {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.10);
+    }
+    .tab.active {
+      background: rgba(255, 255, 255, 0.24);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    }
+
+    .right-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .live-pill::before {
+      content: "";
+      width: 5px; height: 5px;
+      background: #ff6b6b;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #ff6b6b;
+      animation: pulse-soft 1.6s ease-in-out infinite;
+    }
+    .clock-text {
+      font-family: "Inter", sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.2px;
+    }
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+
+    /* ===== Panel containers (card stacks) ===== */
+    .panel {
+      position: fixed;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+    }
+    .panel::-webkit-scrollbar { width: 4px; }
+    .panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+    }
+    .panel-left  { top: 96px; bottom: 96px; left: 20px;  width: 380px; }
+    .panel-right { top: 96px; bottom: 96px; right: 20px; width: 360px; }
+
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+    }
+
+    /* Placeholder card */
+    .panel-placeholder {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      padding: 36px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text-sub);
+    }
+    .panel-placeholder .dot {
+      width: 6px; height: 6px;
+      background: var(--text);
+      border-radius: 50%;
+      animation: pulse-soft 1.4s ease-in-out infinite;
+    }
+
+    /* ===== Hero card (big temperature) ===== */
+    .hero-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .hero-flag-name {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+    .hero-flag-name .flag {
+      font-size: 32px;
+      line-height: 1;
+    }
+    .circuit-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.1px;
+      line-height: 1.2;
+    }
+    .circuit-sub {
+      font-size: 12px;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+    .hero-temp {
+      font-family: "Inter", sans-serif;
+      font-weight: 200;
+      font-size: 96px;
+      line-height: 1;
+      color: var(--text);
+      letter-spacing: -5px;
+      margin: 4px 0 -4px;
+    }
+    .hero-temp .unit {
+      font-size: 44px;
+      font-weight: 300;
+      opacity: 0.75;
+      vertical-align: top;
+      letter-spacing: 0;
+      margin-left: 4px;
+    }
+    .hero-state {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      margin-top: 4px;
+    }
+    .hero-meta {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-top: 2px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .hero-meta .sep { color: var(--text-faint); }
+    .hero-meta .refreshing-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      margin-left: 4px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 6px;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+    .hero-meta .refreshing-tag .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse-soft 1s ease-in-out infinite;
+    }
+
+    /* ===== Stats card (3 inline tiles) ===== */
+    .stats-card {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+    }
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 12px;
+      position: relative;
+      min-width: 0;
+    }
+    .stat + .stat::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 12%;
+      bottom: 12%;
+      width: 1px;
+      background: rgba(255, 255, 255, 0.18);
+    }
+    .stat-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--text);
+      opacity: 0.85;
+      margin-bottom: 4px;
+    }
+    .stat-icon svg { width: 100%; height: 100%; }
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-sub);
+      letter-spacing: 0.2px;
+    }
+    .stat-value {
+      font-family: "Inter", sans-serif;
+      font-weight: 300;
+      font-size: 26px;
+      color: var(--text);
+      line-height: 1;
+      letter-spacing: -0.6px;
+      white-space: nowrap;
+    }
+    .stat-value .unit {
+      font-size: 13px;
+      opacity: 0.65;
+      margin-left: 2px;
+      font-weight: 400;
+    }
+    .stat.amber .stat-icon { opacity: 1; color: var(--warn-amber); }
+    .stat.amber .stat-value { color: var(--warn-amber); }
+    .stat.red   .stat-icon { opacity: 1; color: var(--warn-red); }
+    .stat.red   .stat-value { color: var(--warn-red); }
+
+    /* ===== Detail card (2-column grid) ===== */
+    .detail-card {
+      padding: 18px 22px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 24px;
+    }
+    .detail-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .detail-label {
+      font-size: 11px;
+      color: var(--text-sub);
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    .detail-value {
+      font-family: "Inter", sans-serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.2px;
+    }
+    .detail-value.amber { color: var(--warn-amber); }
+    .detail-value.red   { color: var(--warn-red); }
+    .detail-value.muted { color: var(--text-muted); }
+
+    /* ===== Right panel cards ===== */
+    .right-card { padding: 18px 20px; }
+    .card-heading {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-sub);
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .card-heading .meta {
+      font-family: "Inter", sans-serif;
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 500;
+      letter-spacing: 0;
+      text-transform: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Precip chart */
+    .chart-precip {
+      display: flex;
+      gap: 4px;
+      align-items: stretch;
+    }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .bar-pct {
+      font-family: "Inter", sans-serif;
+      font-weight: 500;
+      font-size: 10px;
+      color: var(--text-sub);
+      font-variant-numeric: tabular-nums;
+      height: 12px;
+      line-height: 12px;
+    }
+    .bar-pct.amber { color: var(--warn-amber); }
+    .bar-pct.red   { color: var(--warn-red); }
+    .bar-track {
+      width: 100%;
+      height: 92px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+    }
+    .bar {
+      width: 70%;
+      background: rgba(255, 255, 255, 0.55);
+      border-radius: 4px 4px 0 0;
+      min-height: 2px;
+      transition: height 0.4s ease, background-color 0.3s ease;
+    }
+    .bar.amber { background: var(--warn-amber); }
+    .bar.red   { background: var(--warn-red); }
+    .bar-time {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Compass */
+    .compass-wrap {
+      position: relative;
+      width: 168px;
+      height: 168px;
+      margin: 4px auto 12px;
+    }
+    .compass { width: 100%; height: 100%; }
+    .compass .ring-outer {
+      fill: rgba(255, 255, 255, 0.05);
+      stroke: rgba(255, 255, 255, 0.32);
+      stroke-width: 1;
+    }
+    .compass .ring-inner {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.16);
+      stroke-width: 1;
+      stroke-dasharray: 3 4;
+    }
+    .compass .tick        { stroke: rgba(255, 255, 255, 0.18); stroke-width: 1; }
+    .compass .tick-major  { stroke: rgba(255, 255, 255, 0.42); stroke-width: 1.5; }
+    .compass .cardinal {
+      fill: var(--text-sub);
+      font-family: "Inter", sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+    .compass .cardinal.n  { fill: var(--text); }
+    .compass .needle {
+      transition: transform 0.7s cubic-bezier(0.4, 1.3, 0.6, 1);
+      transform-origin: 100px 100px;
+    }
+    .compass .needle-arrow { fill: var(--text); }
+    .compass .needle-tail  { fill: rgba(255, 255, 255, 0.20); }
+    .compass .hub          { fill: var(--text); }
+    .compass-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, calc(-50% + 26px));
+      text-align: center;
+      font-family: "Inter", sans-serif;
+      font-size: 11px;
+      color: var(--text-sub);
+      font-weight: 500;
+      pointer-events: none;
+    }
+    .wind-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 20px;
+    }
+
+    /* ===== Bottom bar ===== */
+    .bottom-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      z-index: 50;
+      padding: 12px 22px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-card);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .bottom-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .bottom-section.center {
+      flex: 1;
+      justify-content: center;
+    }
+
+    .track-state {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      color: var(--text);
+    }
+    .track-state .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .track-state.dry .dot {
+      background: var(--warn-green);
+      box-shadow: 0 0 8px rgba(117, 230, 161, 0.75);
+      animation: pulse-soft 1.6s ease-in-out infinite;
+    }
+    .track-state.damp .dot {
+      background: var(--warn-amber);
+      box-shadow: 0 0 8px rgba(255, 209, 102, 0.75);
+      animation: pulse-soft 1s ease-in-out infinite;
+    }
+    .track-state.wet .dot {
+      background: var(--warn-red);
+      box-shadow: 0 0 8px rgba(255, 129, 129, 0.75);
+      animation: pulse-soft 0.6s ease-in-out infinite;
+    }
+    .track-state.standby .dot { background: rgba(255, 255, 255, 0.55); }
+
+    .metric-list {
+      display: inline-flex;
+      align-items: center;
+    }
+    .metric {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 0 16px;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric + .metric { border-left: 1px solid rgba(255, 255, 255, 0.18); }
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .metric-value {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .metric-value.amber { color: var(--warn-amber); }
+    .metric-value.red   { color: var(--warn-red); }
+    .metric-value.muted { color: var(--text-muted); }
+
+    .coords {
+      font-family: "Inter", sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-sub);
+      font-variant-numeric: tabular-nums;
+    }
+    .coords .label {
+      color: var(--text-muted);
+      margin-right: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .coords .sep { color: var(--text-faint); margin: 0 8px; }
+
+    /* ===== Map controls (dark pills) ===== */
+    /* Floats over the bottom-right corner of the viewport. z-index 45 keeps
+       it above the right panel (z 40) so the buttons read cleanly even when
+       they overlap the panel's lower area. */
+    .map-controls {
+      position: fixed;
+      bottom: 70px;
+      right: 20px;
+      z-index: 45;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .map-btn {
+      width: 42px;
+      height: 42px;
+      background: var(--overlay-dark);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--overlay-dark-border);
+      border-radius: var(--radius-btn);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+      box-shadow: var(--shadow-overlay);
+    }
+    .map-btn:hover {
+      background: var(--overlay-dark-strong);
+      border-color: rgba(255, 255, 255, 0.24);
+    }
+    .map-btn:active { transform: scale(0.96); }
+    .map-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.5);
+    }
+    .map-btn svg { width: 18px; height: 18px; }
+
+    /* ===== Update toast ===== */
+    .update-toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translate(-50%, 10px);
+      z-index: 60;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 18px;
+      background: var(--overlay-dark-strong);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(59, 130, 246, 0.45);
+      border-radius: 10px;
+      box-shadow: 0 6px 22px rgba(59, 130, 246, 0.3);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      color: white;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .update-toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .update-toast::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
