@@ -247,7 +247,7 @@
       border-right: 2px solid;
     }
 
-    /* Top status strip (placeholder for STEP 2) */
+    /* Top status strip */
     .top-strip {
       position: fixed;
       top: 24px;
@@ -256,33 +256,100 @@
       z-index: 50;
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 10px 18px;
+      align-items: stretch;
+      gap: 18px;
+      padding: 0 18px;
+      min-height: 44px;
       background: var(--bg-panel);
       border: 1px solid var(--hud-green-dim);
       backdrop-filter: blur(6px);
       font-family: "Orbitron", sans-serif;
-      letter-spacing: 4px;
       font-size: 12px;
       text-shadow: 0 0 8px var(--hud-green-glow);
     }
     .top-strip .brand {
+      display: flex;
+      align-items: center;
       font-weight: 900;
       letter-spacing: 6px;
       color: var(--hud-green);
+      padding-right: 18px;
+      border-right: 1px solid var(--hud-green-dim);
     }
     .top-strip .brand .accent {
       color: var(--hud-cyan);
     }
-    .top-strip .center {
-      color: rgba(0, 255, 136, 0.6);
-      font-size: 10px;
-      letter-spacing: 3px;
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      flex: 1;
+      align-items: stretch;
+      justify-content: center;
+      gap: 2px;
+      overflow: hidden;
     }
+    .tab {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      font-family: "Orbitron", sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      color: rgba(0, 255, 136, 0.55);
+      cursor: none;
+      user-select: none;
+      transition: color 0.18s ease, background 0.18s ease;
+      white-space: nowrap;
+    }
+    .tab .flag {
+      font-size: 14px;
+      line-height: 1;
+      filter: saturate(1.1);
+    }
+    .tab:hover {
+      color: var(--hud-green);
+      background: rgba(0, 255, 136, 0.05);
+    }
+    .tab::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      bottom: 0;
+      height: 2px;
+      background: var(--hud-green);
+      box-shadow:
+        0 0 6px var(--hud-green),
+        0 0 14px var(--hud-green-glow);
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform 0.25s ease;
+    }
+    .tab.active {
+      color: var(--hud-green);
+      background: linear-gradient(
+        to top,
+        rgba(0, 255, 136, 0.14),
+        transparent 70%
+      );
+      text-shadow:
+        0 0 6px var(--hud-green-glow),
+        0 0 14px rgba(0, 255, 136, 0.4);
+    }
+    .tab.active::after {
+      transform: scaleX(1);
+    }
+
     .top-strip .right {
       display: flex;
       gap: 18px;
       align-items: center;
+      padding-left: 18px;
+      border-left: 1px solid var(--hud-green-dim);
       font-family: "Share Tech Mono", monospace;
       font-size: 12px;
       letter-spacing: 2px;
@@ -349,7 +416,7 @@
 
   <div class="top-strip">
     <div class="brand">RACE<span class="accent">WEATHER</span></div>
-    <div class="center">TACTICAL CIRCUIT OBSERVATION GRID // 8 TRACKS</div>
+    <nav class="tabs" id="tabs"></nav>
     <div class="right">
       <span class="live-badge">LIVE</span>
       <span id="clock">--:--:--</span>
@@ -379,15 +446,17 @@
   <script>
     // ===== Circuit data =====
     const CIRCUITS = [
-      { id: "imola",      name: "IMOLA",        full: "Autodromo Enzo e Dino Ferrari", country: "Italy",   flag: "🇮🇹", lat:  44.3439, lng:  11.7167, elev:  47 },
-      { id: "spa",        name: "SPA",          full: "Circuit de Spa-Francorchamps",   country: "Belgium", flag: "🇧🇪", lat:  50.4372, lng:   5.9714, elev: 401 },
-      { id: "lemans",     name: "LE MANS",      full: "Circuit de la Sarthe",           country: "France",  flag: "🇫🇷", lat:  47.9562, lng:   0.2075, elev:  62 },
-      { id: "interlagos", name: "INTERLAGOS",   full: "Autódromo José Carlos Pace",     country: "Brazil",  flag: "🇧🇷", lat: -23.7036, lng: -46.6997, elev: 750 },
-      { id: "cota",       name: "COTA",         full: "Circuit of the Americas",        country: "USA",     flag: "🇺🇸", lat:  30.1328, lng: -97.6411, elev: 163 },
-      { id: "fuji",       name: "FUJI",         full: "Fuji Speedway",                  country: "Japan",   flag: "🇯🇵", lat:  35.3725, lng: 138.9267, elev: 560 },
-      { id: "lusail",     name: "LUSAIL",       full: "Lusail International Circuit",   country: "Qatar",   flag: "🇶🇦", lat:  25.4900, lng:  51.4543, elev:   8 },
-      { id: "bahrain",    name: "BAHRAIN",      full: "Bahrain International Circuit",  country: "Bahrain", flag: "🇧🇭", lat:  26.0325, lng:  50.5106, elev:   7 },
+      { id: "imola",      name: "IMOLA",      tab: "IMOLA",      full: "Autodromo Enzo e Dino Ferrari", country: "Italy",   flag: "🇮🇹", lat:  44.3439, lng:  11.7167, elev:  47 },
+      { id: "spa",        name: "SPA",        tab: "SPA",        full: "Circuit de Spa-Francorchamps",   country: "Belgium", flag: "🇧🇪", lat:  50.4372, lng:   5.9714, elev: 401 },
+      { id: "lemans",     name: "LE MANS",    tab: "LE MANS",    full: "Circuit de la Sarthe",           country: "France",  flag: "🇫🇷", lat:  47.9562, lng:   0.2075, elev:  62 },
+      { id: "interlagos", name: "INTERLAGOS", tab: "INTERLAGOS", full: "Autódromo José Carlos Pace",     country: "Brazil",  flag: "🇧🇷", lat: -23.7036, lng: -46.6997, elev: 750 },
+      { id: "cota",       name: "COTA",       tab: "COTA",       full: "Circuit of the Americas",        country: "USA",     flag: "🇺🇸", lat:  30.1328, lng: -97.6411, elev: 163 },
+      { id: "fuji",       name: "FUJI",       tab: "FUJI",       full: "Fuji Speedway",                  country: "Japan",   flag: "🇯🇵", lat:  35.3725, lng: 138.9267, elev: 560 },
+      { id: "lusail",     name: "LUSAIL",     tab: "QATAR",      full: "Lusail International Circuit",   country: "Qatar",   flag: "🇶🇦", lat:  25.4900, lng:  51.4543, elev:   8 },
+      { id: "bahrain",    name: "BAHRAIN",    tab: "BAHRAIN",    full: "Bahrain International Circuit",  country: "Bahrain", flag: "🇧🇭", lat:  26.0325, lng:  50.5106, elev:   7 },
     ];
+
+    const CIRCUIT_ZOOM = 14;
 
     // ===== Map init =====
     const map = L.map("map", {
@@ -419,8 +488,37 @@
       iconAnchor: [9, 9],
     });
 
-    // Plot circuits
+    // ===== Tabs + markers (shared activation) =====
+    const tabsEl = document.getElementById("tabs");
+    const tabNodes = new Map();
+    const markerNodes = new Map();
+    let activeCircuitId = null;
+
+    function setActiveCircuit(id, { fly = true } = {}) {
+      activeCircuitId = id;
+
+      tabNodes.forEach((node, key) => {
+        node.classList.toggle("active", key === id);
+      });
+
+      if (fly) {
+        const c = CIRCUITS.find((x) => x.id === id);
+        if (c) map.flyTo([c.lat, c.lng], CIRCUIT_ZOOM, { duration: 1.8 });
+      }
+    }
+
     CIRCUITS.forEach((c) => {
+      // Tab
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "tab";
+      tab.dataset.circuit = c.id;
+      tab.innerHTML = `<span class="flag">${c.flag}</span><span>${c.tab}</span>`;
+      tab.addEventListener("click", () => setActiveCircuit(c.id));
+      tabsEl.appendChild(tab);
+      tabNodes.set(c.id, tab);
+
+      // Marker
       const marker = L.marker([c.lat, c.lng], { icon: pulseIcon }).addTo(map);
       marker.bindTooltip(`${c.flag}  ${c.name}`, {
         className: "circuit-tooltip",
@@ -428,9 +526,8 @@
         offset: [0, -10],
         permanent: false,
       });
-      marker.on("click", () => {
-        map.flyTo([c.lat, c.lng], 13, { duration: 1.8 });
-      });
+      marker.on("click", () => setActiveCircuit(c.id));
+      markerNodes.set(c.id, marker);
     });
 
     // ===== Clock =====
