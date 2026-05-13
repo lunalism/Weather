@@ -52,6 +52,14 @@ const precipLayer      = L.layerGroup();
 const trackLayer       = L.layerGroup().addTo(map);
 let precipLayerActive  = false;
 
+// Dedicated pane for the wind-particle field — sits above the gradient
+// bg-overlay (z:250) and tile pane (z:200) but below polylines (z:400) and
+// markers/labels (z:600), so labels stay legible on top of the particles.
+map.createPane("windPane");
+map.getPane("windPane").style.zIndex = "350";
+map.getPane("windPane").style.pointerEvents = "none";
+const windFieldLayer = L.layerGroup().addTo(map);
+
 // ===== Active circuit track outline (static OSM data from tracks.js) =====
 function updateTrackLayer(circuitId) {
   trackLayer.clearLayers();
@@ -70,29 +78,27 @@ function updateTrackLayer(circuitId) {
   });
 }
 
-// ===== Label icon (temp + wind arrow, optionally wind speed for small) =====
-function makeMapLabelIcon({ dir, temp, wind, small = false }) {
-  // Open-Meteo wind_direction = direction wind is coming FROM.
-  // Arrow points where wind is BLOWING TO → rotate by deg + 180.
-  const rot = (dir ?? 0) + 180;
+// ===== Label icon =====
+// Main circuit marker → "18° · 14km/h" (temp + wind speed).
+// Surrounding-point markers → "18°" (temperature only).
+// Wind direction is conveyed by the wind-particle field, not by an arrow.
+function makeMapLabelIcon({ temp, wind, small = false }) {
   const tempText = temp == null ? "—" : `${Math.round(temp)}°`;
 
   let inner;
   if (small) {
-    // Surrounding point: "15° ↗ 9km/h" — temp + arrow + wind speed.
-    const windText = wind == null ? "—" : `${Math.round(wind)}km/h`;
-    inner = `<span class="temp">${tempText}</span><span class="arrow" style="transform: rotate(${rot}deg)">${ICONS.arrow}</span><span class="wind">${windText}</span>`;
+    inner = `<span class="temp">${tempText}</span>`;
   } else {
-    // Main circuit marker: "↗ 18°" — arrow + temp.
-    inner = `<span class="arrow" style="transform: rotate(${rot}deg)">${ICONS.arrow}</span><span class="temp">${tempText}</span>`;
+    const windText = wind == null
+      ? ""
+      : `<span class="sep">·</span><span class="wind">${Math.round(wind)}km/h</span>`;
+    inner = `<span class="temp">${tempText}</span>${windText}`;
   }
 
   const cls = small ? "map-label map-label-sm" : "map-label";
-  // Sized for the larger fonts (main 18px, small 14px) plus content.
-  const size = small ? [140, 28] : [110, 38];
-  // Small label has no underlying marker → center on point.
-  // Main label sits ABOVE its pulse marker (~8px gap).
-  const anchor = small ? [70, 14] : [55, 56];
+  // Main label widened to fit "18° · 14km/h"; small shrunk to just "18°".
+  const size = small ? [60, 28] : [150, 38];
+  const anchor = small ? [30, 14] : [75, 56];
 
   return L.divIcon({
     className: "",
@@ -110,8 +116,8 @@ function updateMapLabels() {
     if (!src) return;
     L.marker([c.lat, c.lng], {
       icon: makeMapLabelIcon({
-        dir: src.wind_direction_10m,
         temp: src.temperature_2m,
+        wind: src.wind_speed_10m,
       }),
       interactive: false,
       keyboard: false,
@@ -135,9 +141,7 @@ function updateSurroundingLabels() {
     if (!bounds.contains(ll)) offScreen++;
     L.marker(ll, {
       icon: makeMapLabelIcon({
-        dir:  data.current.wind_direction_10m,
         temp: data.current.temperature_2m,
-        wind: data.current.wind_speed_10m,
         small: true,
       }),
       interactive: false,
@@ -148,6 +152,58 @@ function updateSurroundingLabels() {
   console.log(
     `[RaceWeather] surrounding render: ${rendered} markers added, ${offScreen} outside viewport (zoom ${zoom.toFixed(1)})`
   );
+}
+
+// ===== Wind-particle field around the active circuit =====
+// A fixed-screen-size square anchored at the circuit's lat/lng. The CSS
+// rotates the whole container so particles' local +X drift aligns with
+// the wind-TO bearing. Pure CSS animation — no rAF, no JS per frame.
+const WIND_FIELD_PX = 700;   // overlay size in screen pixels (TV-readable)
+const WIND_PARTICLE_N = 25;  // particles per field
+
+function makeWindFieldIcon(windDeg, windKmh) {
+  // Open-Meteo dir = where wind comes FROM (0=N). Particles drift TO that
+  // bearing's opposite. Local +X aligned with wind-TO ⇒ rotation = dir + 90.
+  const rot = (((windDeg ?? 0) + 90) % 360 + 360) % 360;
+  // Speed → animation duration. Faster wind ⇒ shorter cycle.
+  const speed = windKmh ?? 0;
+  const dur = Math.max(1.0, Math.min(6.0, 60 / (speed + 5)));
+
+  let particles = "";
+  for (let i = 0; i < WIND_PARTICLE_N; i++) {
+    // Spread particles across the cross-wind axis (local Y), evenly with
+    // jitter so the stream doesn't look like a comb.
+    const t = (i + 0.5) / WIND_PARTICLE_N;
+    const jitter = ((i * 41) % 31) - 15; // pseudo-random ±15px
+    const y = Math.round(t * (WIND_FIELD_PX - 40) + 20 + jitter);
+    // Negative delay so each particle starts mid-animation — instant stream.
+    const delay = (-(i / WIND_PARTICLE_N) * dur).toFixed(2);
+    particles += `<span class="wind-particle" style="--y:${y}px;--duration:${dur.toFixed(2)}s;animation-delay:${delay}s;"></span>`;
+  }
+  return L.divIcon({
+    className: "",
+    html: `<div class="wind-field" style="--wind-rot:${rot}deg;">${particles}</div>`,
+    iconSize: [WIND_FIELD_PX, WIND_FIELD_PX],
+    iconAnchor: [WIND_FIELD_PX / 2, WIND_FIELD_PX / 2],
+  });
+}
+
+function updateWindField(circuitId) {
+  windFieldLayer.clearLayers();
+  if (!circuitId) return;
+  const c = CIRCUITS.find((x) => x.id === circuitId);
+  if (!c) return;
+  const src = c.weather?.current ?? c.mini;
+  if (!src) return;
+  const speed = src.wind_speed_10m;
+  // Calm air: skip the animation rather than render a misleading slow drift.
+  if (speed == null || speed < 1) return;
+  L.marker([c.lat, c.lng], {
+    icon: makeWindFieldIcon(src.wind_direction_10m, speed),
+    interactive: false,
+    keyboard: false,
+    pane: "windPane",
+  }).addTo(windFieldLayer);
 }
 
 // ===== Precipitation overlay (toggleable) =====

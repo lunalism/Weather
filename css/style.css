@@ -100,10 +100,9 @@
       80%, 100% { transform: scale(3);   opacity: 0; }
     }
 
-    /* Map label: dark pill with arrow + temp */
-    /* Flex wrapper that fills the Leaflet icon box so the inline-flex pill
-       inside centers correctly both axes. Missing width/height: 100% was
-       causing labels to render at the top-left of the icon box. */
+    /* Map label: dark pill with temperature (and wind speed on main).
+       Wind direction is conveyed by the .wind-field particle animation
+       around the active circuit — no per-label arrow anymore. */
     .map-label-anchor {
       width: 100%;
       height: 100%;
@@ -131,12 +130,8 @@
       white-space: nowrap;
       letter-spacing: -0.2px;
     }
-    .map-label .arrow {
-      width: 14px; height: 14px;
-      display: inline-flex; align-items: center; justify-content: center;
-      transition: transform 0.6s ease;
-    }
-    .map-label .arrow svg { width: 100%; height: 100%; fill: white; }
+    .map-label .sep  { color: rgba(255, 255, 255, 0.45); font-weight: 500; }
+    .map-label .wind { color: rgba(255, 255, 255, 0.92); font-weight: 500; }
 
     /* Smaller, dimmer variant for surrounding-point labels.
        Roughly 0.8× of main (18px → 14px). */
@@ -151,8 +146,51 @@
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.32);
       color: rgba(255, 255, 255, 0.95);
     }
-    .map-label.map-label-sm .arrow { width: 11px; height: 11px; }
-    .map-label.map-label-sm .wind { opacity: 0.85; }
+
+    /* Wind-particle field — fixed-screen-size square anchored on the
+       active circuit. Container rotation aligns local +X with wind-TO
+       bearing, so particles drift along the wind direction.
+       Sized for TV viewing (3 m away): bright sky-blue comet trails with
+       a glow halo so the wind direction reads at a glance. */
+    .wind-field {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      pointer-events: none;
+      transform: rotate(var(--wind-rot, 90deg));
+      transform-origin: center center;
+      overflow: hidden;
+      -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 75%);
+              mask-image: radial-gradient(circle at center, black 40%, transparent 75%);
+    }
+    .wind-particle {
+      position: absolute;
+      top: var(--y, 0px);
+      left: 0;
+      width: 40px;
+      height: 3px;
+      border-radius: 3px;
+      /* Comet trail: faint tail on the left, bright head on the right.
+         Head moves in the wind-TO direction. */
+      background: linear-gradient(
+        90deg,
+        rgba(136, 204, 255, 0)    0%,
+        rgba(170, 220, 255, 0.45) 45%,
+        rgba(220, 240, 255, 1)    100%
+      );
+      box-shadow:
+        0 0 6px  rgba(136, 204, 255, 0.85),
+        0 0 14px rgba(136, 204, 255, 0.45);
+      opacity: 0;
+      will-change: transform, opacity;
+      animation: wind-drift var(--duration, 4s) linear infinite;
+    }
+    @keyframes wind-drift {
+      0%   { transform: translateX(-60px); opacity: 0; }
+      10%  {                                 opacity: 1; }
+      88%  {                                 opacity: 1; }
+      100% { transform: translateX(760px);  opacity: 0; }
+    }
 
     /* Precipitation overlay label — same anchor wrapper pattern as map labels.
        Color-coded by mm: zero (faint), light (blue), moderate (amber), heavy (red). */

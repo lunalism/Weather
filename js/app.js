@@ -44,6 +44,7 @@ function setActiveCircuit(id, { fly = true } = {}) {
   // flyTo (Le Mans is ~14 km wide). Clear immediately; draw the new outline
   // only once the camera has landed.
   trackLayer.clearLayers();
+  windFieldLayer.clearLayers();
   const drawTrackIfStillActive = () => {
     if (activeCircuitId === id) updateTrackLayer(id);
   };
@@ -54,6 +55,11 @@ function setActiveCircuit(id, { fly = true } = {}) {
   } else {
     drawTrackIfStillActive();
   }
+
+  // Wind particles can draw immediately — the divIcon is geo-locked to the
+  // circuit, so it flies in with the camera rather than blanketing the screen
+  // mid-fly the way a large track polyline does.
+  updateWindField(id);
 
   renderPanels();
   ensureCircuitWeather(c);

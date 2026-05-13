@@ -97,6 +97,7 @@ async function ensureCircuitWeather(c) {
     if (updated && activeCircuitId === c.id) showUpdateToast();
     updateMapLabels();
     updatePrecipLayer();
+    if (activeCircuitId === c.id) updateWindField(c.id);
   }
 }
 
@@ -128,6 +129,7 @@ async function loadAllCircuitsMini() {
       c.mini = await fetchMiniWeather(c.lat, c.lng);
       updateMapLabels();
       updatePrecipLayer();  // refresh if precip toggle is active
+      if (activeCircuitId === c.id) updateWindField(c.id);
     } catch (err) {
       console.warn(`[RaceWeather] mini fetch failed for ${c.id}`, err);
     }
