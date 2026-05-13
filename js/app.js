@@ -13,8 +13,20 @@ function setActiveCircuit(id, { fly = true } = {}) {
   });
 
   const c = CIRCUITS.find((x) => x.id === id);
+
+  // Track outline can blanket the screen at intermediate zoom levels during
+  // flyTo (Le Mans is ~14 km wide). Clear immediately; draw the new outline
+  // only once the camera has landed.
+  trackLayer.clearLayers();
+  const drawTrackIfStillActive = () => {
+    if (activeCircuitId === id) updateTrackLayer(id);
+  };
+
   if (fly && c) {
     map.flyTo([c.lat, c.lng], c.zoom ?? CIRCUIT_ZOOM, { duration: 1.8 });
+    map.once("moveend", drawTrackIfStillActive);
+  } else {
+    drawTrackIfStillActive();
   }
 
   renderPanels();
@@ -23,9 +35,6 @@ function setActiveCircuit(id, { fly = true } = {}) {
   // Surrounding points are tied to the active circuit
   surroundingLayer.clearLayers();
   if (c) loadSurroundingForCircuit(c);
-
-  // Highlight the circuit's track outline (static OSM polylines)
-  updateTrackLayer(id);
 }
 
 // Clock kicks off here
