@@ -5,10 +5,12 @@
       --text-muted:  rgba(255, 255, 255, 0.55);
       --text-faint:  rgba(255, 255, 255, 0.35);
 
-      /* Translucent glass cards */
-      --card-bg:        rgba(255, 255, 255, 0.16);
-      --card-bg-strong: rgba(255, 255, 255, 0.22);
-      --card-border:    rgba(255, 255, 255, 0.20);
+      /* Dark glass cards — high opacity so panels stay readable over
+         bright-sand desert satellite tiles (Qatar, Bahrain) as well as
+         dark forest tiles. White text on dark glass works in both. */
+      --card-bg:        rgba(18, 22, 34, 0.80);
+      --card-bg-strong: rgba(22, 26, 40, 0.88);
+      --card-border:    rgba(255, 255, 255, 0.12);
 
       /* Dark pills for map overlays */
       --overlay-dark:        rgba(18, 22, 32, 0.78);
