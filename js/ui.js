@@ -174,6 +174,29 @@ function gripLevel(state, surfaceTemp, windKmh) {
   return "High";
 }
 
+// ---- Next-race pill -------------------------------------------------------
+function nextRacePill(c) {
+  if (!c?.raceDate) return "";
+  const days = daysUntilRace(c.raceDate);
+  if (days == null) return "";
+  const label = c.race ?? c.name;
+
+  let countdown, cls;
+  if (days < 0)       { countdown = "Race completed"; cls = "past"; }
+  else if (days === 0){ countdown = "Race day";       cls = "today"; }
+  else if (days === 1){ countdown = "Tomorrow";       cls = "soon"; }
+  else if (days <= 7) { countdown = `${days} days`;   cls = "soon"; }
+  else                { countdown = `${days} days`;   cls = ""; }
+
+  return `
+    <span class="next-race ${cls}">
+      <span class="next-race-label">Next</span>
+      <span class="next-race-name">${label}</span>
+      <span class="next-race-sep">·</span>
+      <span class="next-race-count">${countdown}</span>
+    </span>`;
+}
+
 function nextRainText(weather) {
   const cur = weather?.current ?? {};
   const probs = weather?.hourly?.precipitation_probability;
@@ -378,12 +401,15 @@ function renderBottomStrip() {
       </span>`
     : "";
 
+  const racePillHTML = nextRacePill(c);
+
   if (!c || !c.weather) {
     stripEl.innerHTML = `
       <div class="bottom-section">
         <span class="track-state standby">
           <span class="dot"></span>${c ? "Loading…" : "Standby"}
         </span>
+        ${racePillHTML}
       </div>
       <div class="bottom-section center"></div>
       <div class="bottom-section">${coordsHTML}</div>`;
@@ -423,6 +449,7 @@ function renderBottomStrip() {
       <span class="track-state ${stateCls}">
         <span class="dot"></span>${state} · ${grip} grip
       </span>
+      ${racePillHTML}
     </div>
     <div class="bottom-section center">
       <div class="metric-list">

@@ -5,6 +5,32 @@
 
 let activeCircuitId = null;
 
+// ---- Race-date helpers -----------------------------------------------------
+// Compare against today's UTC midnight so the countdown ticks over at 00:00 UTC
+// rather than the viewer's local midnight (TV display is timezone-agnostic).
+function daysUntilRace(raceDate) {
+  if (!raceDate) return null;
+  const [y, m, d] = raceDate.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  const now = new Date();
+  const todayUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const raceUTC = Date.UTC(y, m - 1, d);
+  return Math.round((raceUTC - todayUTC) / (24 * 3600 * 1000));
+}
+
+// Soonest upcoming race (days >= 0). If every race is past, fall back to the
+// season opener so the season-finished state still has a sane default.
+function pickDefaultCircuit() {
+  let best = null;
+  let bestDays = Infinity;
+  CIRCUITS.forEach((c) => {
+    const d = daysUntilRace(c.raceDate);
+    if (d == null || d < 0) return;
+    if (d < bestDays) { bestDays = d; best = c; }
+  });
+  return best?.id ?? CIRCUITS[0].id;
+}
+
 function setActiveCircuit(id, { fly = true } = {}) {
   activeCircuitId = id;
 
@@ -51,7 +77,8 @@ window.map = map;
 // Boot:
 //  1. Empty panels render so something is on screen immediately
 //  2. Light fetch of all 8 circuits in background (labels appear as data lands)
-//  3. After 1.8s, auto-select Imola — flies in, panels populate, surrounding fetch
+//  3. After 1.8s, auto-select the next-upcoming-race circuit — flies in,
+//     panels populate, surrounding fetch
 renderPanels();
 loadAllCircuitsMini();
-setTimeout(() => setActiveCircuit("imola"), 1800);
+setTimeout(() => setActiveCircuit(pickDefaultCircuit()), 1800);

@@ -738,6 +738,34 @@
     }
     .track-state.standby .dot { background: rgba(255, 255, 255, 0.55); }
 
+    .next-race {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .next-race-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-sub);
+    }
+    .next-race-sep { color: var(--text-sub); }
+    .next-race-count { color: var(--text-sub); }
+    .next-race.soon  { border-color: rgba(255, 209, 102, 0.5); }
+    .next-race.soon  .next-race-count { color: var(--warn-amber); }
+    .next-race.today { border-color: rgba(255, 129, 129, 0.6); }
+    .next-race.today .next-race-count { color: var(--warn-red); font-weight: 700; }
+    .next-race.past  { opacity: 0.6; }
+
     .metric-list {
       display: inline-flex;
       align-items: center;
