@@ -293,7 +293,7 @@ function renderCurrentPanel() {
       <div class="stat ${windStatCls}">
         <span class="stat-icon">${ICONS.wind}</span>
         <span class="stat-label">Wind</span>
-        <span class="stat-value">${fmt(wind, 0)}<span class="unit">km/h</span></span>
+        <span class="stat-value">${fmt(kmhToMs(wind), 1)}<span class="unit">m/s</span></span>
       </div>
     </div>
 
@@ -377,8 +377,8 @@ function renderForecastPanel() {
         <div class="compass-center">${dDeg == null ? "—" : Math.round(dDeg) + "°"}</div>
       </div>
       <div class="wind-detail-grid">
-        ${detailCell("Speed",     fmt(ws, 0, " km/h"), speedCls)}
-        ${detailCell("Gusts",     fmt(gust, 0, " km/h"), gustCls)}
+        ${detailCell("Speed",     fmt(kmhToMs(ws), 1, " m/s"), speedCls)}
+        ${detailCell("Gusts",     fmt(kmhToMs(gust), 1, " m/s"), gustCls)}
         ${detailCell("Direction", dirMeta)}
         ${detailCell("Beaufort",  bft.n == null ? "—" : `${bft.n} · ${bft.name}`)}
       </div>
@@ -454,7 +454,7 @@ function renderBottomStrip() {
     <div class="bottom-section center">
       <div class="metric-list">
         ${metric("Surface",   fmt(soilTemp, 0, "°C"),  surfCls)}
-        ${metric("Wind",      fmt(wind, 0, " km/h"),   windCls)}
+        ${metric("Wind",      fmt(kmhToMs(wind), 1, " m/s"), windCls)}
         ${metric("Rain",      fmt(precipProb, 0, "%"), rainCls)}
         ${metric("Next rain", nextRain,                nextCls)}
         ${metric("Visibility",fmt(visKm, 0, " km"),    visCls)}

@@ -79,7 +79,7 @@ function updateTrackLayer(circuitId) {
 }
 
 // ===== Label icon =====
-// Main circuit marker → "18° · 14km/h" (temp + wind speed).
+// Main circuit marker → "18° · 3.9m/s" (temp + wind speed).
 // Surrounding-point markers → "18°" (temperature only).
 // Wind direction is conveyed by the wind-particle field, not by an arrow.
 function makeMapLabelIcon({ temp, wind, small = false }) {
@@ -91,12 +91,12 @@ function makeMapLabelIcon({ temp, wind, small = false }) {
   } else {
     const windText = wind == null
       ? ""
-      : `<span class="sep">·</span><span class="wind">${Math.round(wind)}km/h</span>`;
+      : `<span class="sep">·</span><span class="wind">${kmhToMs(wind).toFixed(1)}m/s</span>`;
     inner = `<span class="temp">${tempText}</span>${windText}`;
   }
 
   const cls = small ? "map-label map-label-sm" : "map-label";
-  // Main label widened to fit "18° · 14km/h"; small shrunk to just "18°".
+  // Main label widened to fit "18° · 3.9m/s"; small shrunk to just "18°".
   const size = small ? [60, 28] : [150, 38];
   const anchor = small ? [30, 14] : [75, 56];
 
@@ -161,13 +161,15 @@ function updateSurroundingLabels() {
 const WIND_FIELD_PX = 700;   // overlay size in screen pixels (TV-readable)
 const WIND_PARTICLE_N = 25;  // particles per field
 
-function makeWindFieldIcon(windDeg, windKmh) {
+function makeWindFieldIcon(windDeg, windMs) {
   // Open-Meteo dir = where wind comes FROM (0=N). Particles drift TO that
   // bearing's opposite. Local +X aligned with wind-TO ⇒ rotation = dir + 90.
   const rot = (((windDeg ?? 0) + 90) % 360 + 360) % 360;
-  // Speed → animation duration. Faster wind ⇒ shorter cycle.
-  const speed = windKmh ?? 0;
-  const dur = Math.max(1.0, Math.min(6.0, 60 / (speed + 5)));
+  // Speed → animation duration. Faster wind ⇒ shorter cycle. Recalibrated for
+  // m/s input: 17/(v+1.4) tracks the old km/h curve 60/(v_kmh+5) (since
+  // v_kmh ≈ 3.6·v_ms), keeping the same 1–6s clamp range and visual feel.
+  const speed = windMs ?? 0;
+  const dur = Math.max(1.0, Math.min(6.0, 17 / (speed + 1.4)));
 
   let particles = "";
   for (let i = 0; i < WIND_PARTICLE_N; i++) {
@@ -195,11 +197,12 @@ function updateWindField(circuitId) {
   if (!c) return;
   const src = c.weather?.current ?? c.mini;
   if (!src) return;
-  const speed = src.wind_speed_10m;
+  const speedMs = kmhToMs(src.wind_speed_10m);
   // Calm air: skip the animation rather than render a misleading slow drift.
-  if (speed == null || speed < 1) return;
+  // 0.3 m/s ≈ 1.08 km/h, matching the prior < 1 km/h cutoff.
+  if (speedMs == null || speedMs < 0.3) return;
   L.marker([c.lat, c.lng], {
-    icon: makeWindFieldIcon(src.wind_direction_10m, speed),
+    icon: makeWindFieldIcon(src.wind_direction_10m, speedMs),
     interactive: false,
     keyboard: false,
     pane: "windPane",

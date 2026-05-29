@@ -34,6 +34,11 @@ const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const AUTO_REFRESH_MS = 10 * 60 * 1000; // re-fetch the active circuit every 10 min
 
+// Open-Meteo returns wind speed in km/h; the UI displays m/s (km/h ÷ 3.6).
+// Raw km/h is kept internally for color thresholds / Beaufort / grip logic —
+// only display strings are converted.
+const kmhToMs = (kmh) => (kmh == null || Number.isNaN(kmh) ? null : kmh / 3.6);
+
 const CURRENT_VARS = [
   "temperature_2m", "relative_humidity_2m", "apparent_temperature",
   "precipitation", "rain", "weather_code", "cloud_cover",
