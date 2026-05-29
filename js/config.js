@@ -32,6 +32,7 @@ const ICONS = {
 // Open-Meteo API
 const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+const AUTO_REFRESH_MS = 10 * 60 * 1000; // re-fetch the active circuit every 10 min
 
 const CURRENT_VARS = [
   "temperature_2m", "relative_humidity_2m", "apparent_temperature",

@@ -66,9 +66,12 @@ function isCacheFresh(c) {
   );
 }
 
-async function ensureCircuitWeather(c) {
+// `force` bypasses the freshness check so the 10-min auto-refresh always pulls
+// fresh data (the cache TTL equals the refresh interval, so a non-forced call
+// would otherwise no-op right on the boundary).
+async function ensureCircuitWeather(c, { force = false } = {}) {
   if (!c) return;
-  if (isCacheFresh(c)) return;
+  if (!force && isCacheFresh(c)) return;
   if (c.weatherLoading) return;
 
   c.weatherLoading = true;

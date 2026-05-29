@@ -4,6 +4,20 @@
 // loadSurroundingForCircuit, tabNodes, renderPanels, etc.
 
 let activeCircuitId = null;
+let autoRefreshTimer = null;
+
+// Re-fetch the active circuit's weather on a fixed cadence so a left-running
+// TV display stays current without any tab interaction. Cache-bypassing
+// (force:true); ensureCircuitWeather's finally block already repaints panels,
+// map labels, precip layer, wind field and fires the "Updated" toast on
+// success. Restarted on every tab switch so the clock starts fresh per circuit.
+function restartAutoRefresh() {
+  clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    const c = CIRCUITS.find((x) => x.id === activeCircuitId);
+    if (c) ensureCircuitWeather(c, { force: true });
+  }, AUTO_REFRESH_MS);
+}
 
 // ---- Race-date helpers -----------------------------------------------------
 // Compare against today's UTC midnight so the countdown ticks over at 00:00 UTC
@@ -63,6 +77,7 @@ function setActiveCircuit(id, { fly = true } = {}) {
 
   renderPanels();
   ensureCircuitWeather(c);
+  restartAutoRefresh();
 
   // Surrounding points are tied to the active circuit
   surroundingLayer.clearLayers();
