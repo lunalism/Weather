@@ -6,14 +6,14 @@
 // race day in the local calendar (ISO YYYY-MM-DD) — used both to pick
 // the default active circuit at boot and to render the NEXT RACE pill.
 const CIRCUITS = [
-  { id: "imola",      name: "Imola",      tab: "Imola",      full: "Autodromo Enzo e Dino Ferrari", country: "Italy",   flag: "🇮🇹", lat:  44.3439, lng:  11.7167, elev:  47,           round: 1, race: "6H Imola",      raceDate: "2026-04-19" },
-  { id: "spa",        name: "Spa",        tab: "Spa",        full: "Circuit de Spa-Francorchamps",  country: "Belgium", flag: "🇧🇪", lat:  50.4372, lng:   5.9714, elev: 401,           round: 2, race: "6H Spa",        raceDate: "2026-05-09" },
-  { id: "lemans",     name: "Le Mans",    tab: "Le Mans",    full: "Circuit de la Sarthe",          country: "France",  flag: "🇫🇷", lat:  47.9350, lng:   0.2220, elev:  62, zoom: 13, round: 3, race: "Le Mans 24h",   raceDate: "2026-06-13" },
-  { id: "interlagos", name: "Interlagos", tab: "Interlagos", full: "Autódromo José Carlos Pace",    country: "Brazil",  flag: "🇧🇷", lat: -23.7036, lng: -46.6997, elev: 750,           round: 4, race: "6H São Paulo",  raceDate: "2026-07-12" },
-  { id: "cota",       name: "COTA",       tab: "COTA",       full: "Circuit of the Americas",       country: "USA",     flag: "🇺🇸", lat:  30.1328, lng: -97.6411, elev: 163,           round: 5, race: "6H COTA",       raceDate: "2026-09-06" },
-  { id: "fuji",       name: "Fuji",       tab: "Fuji",       full: "Fuji Speedway",                 country: "Japan",   flag: "🇯🇵", lat:  35.3725, lng: 138.9267, elev: 560,           round: 6, race: "6H Fuji",       raceDate: "2026-09-27" },
-  { id: "lusail",     name: "Lusail",     tab: "Qatar",      full: "Lusail International Circuit",  country: "Qatar",   flag: "🇶🇦", lat:  25.4900, lng:  51.4543, elev:   8,           round: 7, race: "6H Qatar",      raceDate: "2026-10-24" },
-  { id: "bahrain",    name: "Bahrain",    tab: "Bahrain",    full: "Bahrain International Circuit", country: "Bahrain", flag: "🇧🇭", lat:  26.0325, lng:  50.5106, elev:   7,           round: 8, race: "8H Bahrain",    raceDate: "2026-11-07" },
+  { id: "imola",      name: "Imola",      tab: "Imola",      full: "Autodromo Enzo e Dino Ferrari", country: "Italy",   flag: "🇮🇹", lat:  44.3439, lng:  11.7167, elev:  47,           round: 1, race: "6H Imola",      raceDate: "2026-04-19", timezone: "Europe/Rome" },
+  { id: "spa",        name: "Spa",        tab: "Spa",        full: "Circuit de Spa-Francorchamps",  country: "Belgium", flag: "🇧🇪", lat:  50.4372, lng:   5.9714, elev: 401,           round: 2, race: "6H Spa",        raceDate: "2026-05-09", timezone: "Europe/Brussels" },
+  { id: "lemans",     name: "Le Mans",    tab: "Le Mans",    full: "Circuit de la Sarthe",          country: "France",  flag: "🇫🇷", lat:  47.9350, lng:   0.2220, elev:  62, zoom: 13, round: 3, race: "Le Mans 24h",   raceDate: "2026-06-13", timezone: "Europe/Paris" },
+  { id: "interlagos", name: "Interlagos", tab: "Interlagos", full: "Autódromo José Carlos Pace",    country: "Brazil",  flag: "🇧🇷", lat: -23.7036, lng: -46.6997, elev: 750,           round: 4, race: "6H São Paulo",  raceDate: "2026-07-12", timezone: "America/Sao_Paulo" },
+  { id: "cota",       name: "COTA",       tab: "COTA",       full: "Circuit of the Americas",       country: "USA",     flag: "🇺🇸", lat:  30.1328, lng: -97.6411, elev: 163,           round: 5, race: "6H COTA",       raceDate: "2026-09-06", timezone: "America/Chicago" },
+  { id: "fuji",       name: "Fuji",       tab: "Fuji",       full: "Fuji Speedway",                 country: "Japan",   flag: "🇯🇵", lat:  35.3725, lng: 138.9267, elev: 560,           round: 6, race: "6H Fuji",       raceDate: "2026-09-27", timezone: "Asia/Tokyo" },
+  { id: "lusail",     name: "Lusail",     tab: "Qatar",      full: "Lusail International Circuit",  country: "Qatar",   flag: "🇶🇦", lat:  25.4900, lng:  51.4543, elev:   8,           round: 7, race: "6H Qatar",      raceDate: "2026-10-24", timezone: "Asia/Qatar" },
+  { id: "bahrain",    name: "Bahrain",    tab: "Bahrain",    full: "Bahrain International Circuit", country: "Bahrain", flag: "🇧🇭", lat:  26.0325, lng:  50.5106, elev:   7,           round: 8, race: "8H Bahrain",    raceDate: "2026-11-07", timezone: "Asia/Bahrain" },
 ];
 
 // Default zoom for circuits that don't override it.

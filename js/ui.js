@@ -17,12 +17,32 @@ CIRCUITS.forEach((c) => {
 });
 
 // ---- Clock ------------------------------------------------------------------
+// Shows the active circuit's local wall-clock time. The IANA `timezone` on each
+// CIRCUITS entry drives the conversion; the parenthesised label is the city
+// portion of that zone (Intl's short tz names are unreliable — European/Asian
+// zones render as "GMT+2" rather than "CET" — so we show the city instead).
+// Falls back to UTC before a circuit is selected at boot.
+function tzCityLabel(timezone) {
+  return timezone.split("/").pop().replace(/_/g, " ");
+}
+
 function updateClock() {
   const now = new Date();
-  const hh = String(now.getUTCHours()).padStart(2, "0");
-  const mm = String(now.getUTCMinutes()).padStart(2, "0");
-  const ss = String(now.getUTCSeconds()).padStart(2, "0");
-  document.getElementById("clock").textContent = `${hh}:${mm}:${ss} UTC`;
+  const c = CIRCUITS.find((x) => x.id === activeCircuitId);
+
+  if (!c || !c.timezone) {
+    const hh = String(now.getUTCHours()).padStart(2, "0");
+    const mm = String(now.getUTCMinutes()).padStart(2, "0");
+    const ss = String(now.getUTCSeconds()).padStart(2, "0");
+    document.getElementById("clock").textContent = `${hh}:${mm}:${ss} UTC`;
+    return;
+  }
+
+  const time = new Intl.DateTimeFormat("en-GB", {
+    timeZone: c.timezone,
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+  }).format(now);
+  document.getElementById("clock").textContent = `${time} (${tzCityLabel(c.timezone)})`;
 }
 
 // ---- Update toast (called after each successful weather fetch) -------------

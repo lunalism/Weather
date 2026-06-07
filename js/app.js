@@ -76,6 +76,7 @@ function setActiveCircuit(id, { fly = true } = {}) {
   updateWindField(id);
 
   renderPanels();
+  updateClock(); // repaint immediately so the clock's timezone flips on tab switch
   ensureCircuitWeather(c);
   restartAutoRefresh();
 
