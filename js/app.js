@@ -32,17 +32,46 @@ function daysUntilRace(raceDate) {
   return Math.round((raceUTC - todayUTC) / (24 * 3600 * 1000));
 }
 
-// Soonest upcoming race (days >= 0). If every race is past, fall back to the
+// A race counts as over once we're past its final calendar day (endDate,
+// which defaults to raceDate). This is what keeps a currently-running event
+// selected — Le Mans stays active on race night (raceDate is already in the
+// past) until its endDate passes too.
+function raceIsOver(c) {
+  const end = daysUntilRace(c.endDate ?? c.raceDate);
+  return end != null && end < 0;
+}
+
+// The schedule's current circuit: the soonest race that isn't over yet. A
+// running event (raceDate in the past, endDate not) wins because its raceDate
+// distance is the most negative. If every race is over, fall back to the
 // season opener so the season-finished state still has a sane default.
 function pickDefaultCircuit() {
   let best = null;
   let bestDays = Infinity;
   CIRCUITS.forEach((c) => {
+    if (raceIsOver(c)) return;
     const d = daysUntilRace(c.raceDate);
-    if (d == null || d < 0) return;
+    if (d == null) return;
     if (d < bestDays) { bestDays = d; best = c; }
   });
   return best?.id ?? CIRCUITS[0].id;
+}
+
+// Re-pick the schedule's current circuit on a slow cadence so a TV left
+// running for days advances to the next race on its own at the 00:00 UTC date
+// rollover. Only switches when the computed default actually changes, so a
+// manually-selected tab is respected until the next race boundary is crossed.
+let scheduledDefaultId = null;
+let scheduleWatcher = null;
+function startScheduleWatcher() {
+  clearInterval(scheduleWatcher);
+  scheduleWatcher = setInterval(() => {
+    const next = pickDefaultCircuit();
+    if (next !== scheduledDefaultId) {
+      scheduledDefaultId = next;
+      setActiveCircuit(next);
+    }
+  }, SCHEDULE_CHECK_MS);
 }
 
 function setActiveCircuit(id, { fly = true } = {}) {
@@ -101,6 +130,12 @@ window.map = map;
 //  2. Light fetch of all 8 circuits in background (labels appear as data lands)
 //  3. After 1.8s, auto-select the next-upcoming-race circuit — flies in,
 //     panels populate, surrounding fetch
+//  4. Start the schedule watcher so the active circuit advances on its own
+//     when a race wraps (no browser refresh needed)
 renderPanels();
 loadAllCircuitsMini();
-setTimeout(() => setActiveCircuit(pickDefaultCircuit()), 1800);
+setTimeout(() => {
+  scheduledDefaultId = pickDefaultCircuit();
+  setActiveCircuit(scheduledDefaultId);
+  startScheduleWatcher();
+}, 1800);

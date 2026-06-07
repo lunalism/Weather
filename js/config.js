@@ -5,10 +5,14 @@
 // Tab order mirrors the 2026 WEC season (R1 → R8). `raceDate` is the
 // race day in the local calendar (ISO YYYY-MM-DD) — used both to pick
 // the default active circuit at boot and to render the NEXT RACE pill.
+// `endDate` is the event's final calendar day; it defaults to `raceDate`
+// and only needs setting for multi-day events. Le Mans runs 24h across
+// two days, so endDate=06-14 keeps it active through race night and the
+// auto-advance hands off to São Paulo the following day (06-15).
 const CIRCUITS = [
   { id: "imola",      name: "Imola",      tab: "Imola",      full: "Autodromo Enzo e Dino Ferrari", country: "Italy",   flag: "🇮🇹", lat:  44.3439, lng:  11.7167, elev:  47,           round: 1, race: "6H Imola",      raceDate: "2026-04-19", timezone: "Europe/Rome" },
   { id: "spa",        name: "Spa",        tab: "Spa",        full: "Circuit de Spa-Francorchamps",  country: "Belgium", flag: "🇧🇪", lat:  50.4372, lng:   5.9714, elev: 401,           round: 2, race: "6H Spa",        raceDate: "2026-05-09", timezone: "Europe/Brussels" },
-  { id: "lemans",     name: "Le Mans",    tab: "Le Mans",    full: "Circuit de la Sarthe",          country: "France",  flag: "🇫🇷", lat:  47.9350, lng:   0.2220, elev:  62, zoom: 13, round: 3, race: "Le Mans 24h",   raceDate: "2026-06-13", timezone: "Europe/Paris" },
+  { id: "lemans",     name: "Le Mans",    tab: "Le Mans",    full: "Circuit de la Sarthe",          country: "France",  flag: "🇫🇷", lat:  47.9350, lng:   0.2220, elev:  62, zoom: 13, round: 3, race: "Le Mans 24h",   raceDate: "2026-06-13", endDate: "2026-06-14", timezone: "Europe/Paris" },
   { id: "interlagos", name: "Interlagos", tab: "Interlagos", full: "Autódromo José Carlos Pace",    country: "Brazil",  flag: "🇧🇷", lat: -23.7036, lng: -46.6997, elev: 750,           round: 4, race: "6H São Paulo",  raceDate: "2026-07-12", timezone: "America/Sao_Paulo" },
   { id: "cota",       name: "COTA",       tab: "COTA",       full: "Circuit of the Americas",       country: "USA",     flag: "🇺🇸", lat:  30.1328, lng: -97.6411, elev: 163,           round: 5, race: "6H COTA",       raceDate: "2026-09-06", timezone: "America/Chicago" },
   { id: "fuji",       name: "Fuji",       tab: "Fuji",       full: "Fuji Speedway",                 country: "Japan",   flag: "🇯🇵", lat:  35.3725, lng: 138.9267, elev: 560,           round: 6, race: "6H Fuji",       raceDate: "2026-09-27", timezone: "Asia/Tokyo" },
@@ -33,6 +37,7 @@ const ICONS = {
 const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
 const AUTO_REFRESH_MS = 10 * 60 * 1000; // re-fetch the active circuit every 10 min
+const SCHEDULE_CHECK_MS = 60 * 1000;    // re-pick the schedule's current circuit every minute
 
 // Open-Meteo returns wind speed in km/h; the UI displays m/s (km/h ÷ 3.6).
 // Raw km/h is kept internally for color thresholds / Beaufort / grip logic —

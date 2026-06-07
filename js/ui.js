@@ -201,9 +201,13 @@ function nextRacePill(c) {
   if (days == null) return "";
   const label = c.race ?? c.name;
 
+  // Past the start day but still within the event window (multi-day races like
+  // Le Mans) reads as "Race day", not "completed", until endDate also passes.
+  const endDays = daysUntilRace(c.endDate ?? c.raceDate);
+
   let countdown, cls;
-  if (days < 0)       { countdown = "Race completed"; cls = "past"; }
-  else if (days === 0){ countdown = "Race day";       cls = "today"; }
+  if (endDays != null && endDays < 0) { countdown = "Race completed"; cls = "past"; }
+  else if (days <= 0) { countdown = "Race day";       cls = "today"; }
   else if (days === 1){ countdown = "Tomorrow";       cls = "soon"; }
   else if (days <= 7) { countdown = `${days} days`;   cls = "soon"; }
   else                { countdown = `${days} days`;   cls = ""; }
